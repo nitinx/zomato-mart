@@ -267,8 +267,6 @@ def get_search_bylocation(headers, query, entity_id, entity_type, print_flag):
         response = requests.get(base_url + '/search?' + search_parameters + '&start=' + str(results_start) + '&count='
                                 + str(results_shown) + '&sort=rating&order=desc', params='', headers=headers).json()
 
-        print(response)
-
         # results_found = response['results_found']
         results_start = response['results_start']
         results_shown = response['results_shown']
@@ -447,35 +445,57 @@ def get_restaurant_bycollection(headers, print_flag):
 def main():
     """Run App"""
 
+    # Initialize variables
     headers = {'Accept': 'application/json', 'user-key': get_user_key()}
-    city = 'Bangalore'
-    localities = ['Sarjapur Road', 'HSR', 'Koramangala', 'Indiranagar', 'Kadubeesanahalli']
-    print_flag = 'Y'
+    print_flag = 'N'
+    city = ''
+    localities = []
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] City: " + city)
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Localities: " + str(localities))
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Print Flag: " + print_flag)
+
+    # Retrieve Parameter | City Names
+    db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+    for count in db_cur_one:
+        if count[0] is 0:
+            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: CITY_NAME missing. Please define. ")
+        else:
+            db_cur_two.execute("select distinct CITY_NAME from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+            for city_name in db_cur_two:
+                city = city_name[0]
+
+    # Retrieve Parameter | Localities
+    db_cur_one.execute("select count(distinct LOCALITY) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+    for count in db_cur_one:
+        if count[0] is 0:
+            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: LOCALITY missing. Please define. ")
+        else:
+            db_cur_two.execute("select distinct LOCALITY from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+            for locality in db_cur_two:
+                localities.append(locality[0])
+
+    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER City: " + city)
+    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Localities: " + str(localities))
+    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Print Flag: " + print_flag)
 
     # Fetch Category data
-    '''get_categories(headers, print_flag)
+    get_categories(headers, print_flag)
 
     # Fetch City related data
     city_id = get_cities(headers, city, print_flag)
     get_cuisines(headers, city_id, print_flag)
-    get_establishments(headers, city_id, print_flag)'''
+    get_establishments(headers, city_id, print_flag)
 
     # Fetch Location related data
     for locality in range(len(localities)):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
         entity = get_locations(headers, localities[locality], print_flag)
-        #get_location_details(headers, entity[0], entity[1], print_flag)
+        get_location_details(headers, entity[0], entity[1], print_flag)
         get_search_bylocation(headers, localities[locality], entity[0], entity[1], print_flag)
 
     # Fetch Collection related data
-    '''get_collections(headers, city_id, print_flag)
+    get_collections(headers, city_id, print_flag)
     get_search_bycollection(headers, city, print_flag)
-    get_restaurant_bycollection(headers, print_flag)'''
+    get_restaurant_bycollection(headers, print_flag)
 
     # Close Oracle Connections
     db_cur_one.close()

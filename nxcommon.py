@@ -57,37 +57,6 @@ class NXOracle:
         cursor.execute("alter database mount")
         cursor.execute("alter database open")
 
-        '''try:
-        con_main = cx_Oracle.connect(key_oracle[0]['USER'],
-                                       key_oracle[0]['PASSWORD'],
-                                       key_oracle[0]['CONNECT_STRING'],
-                                       cx_Oracle.SYSDBA | cx_Oracle.PRELIM_AUTH)
-        except cx_Oracle.DatabaseError:
-        sys.exit()
-        try:
-            con_main.startup()
-        except cx_Oracle.DatabaseError:
-            sys.exit()
-
-        try:
-            con_main = cx_Oracle.connect(username, password, '%s/%s' % (hostname, service), cx_Oracle.SYSDBA)
-        except cx_Oracle.DatabaseError:
-            sys.exit()
-
-        cur_main = con_main.cursor()
-
-        try:
-            sql = "alter database mount"
-            cur_main.execute(sql)
-        except cx_Oracle.DatabaseError:
-            sys.exit()
-
-        try:
-            sql = "alter database open"
-            cur_main.execute(sql)
-        except cx_Oracle.DatabaseError:
-            sys.exit()'''
-
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Startup Completed")
 
     def db_stop(self):
@@ -106,25 +75,6 @@ class NXOracle:
         cursor.execute("alter database close normal")
         cursor.execute("alter database dismount")
         con_main.shutdown(mode=cx_Oracle.DBSHUTDOWN_FINAL)
-
-        '''try:
-            con_main.shutdown(cx_Oracle.DBSHUTDOWN_IMMEDIATE)
-        except cx_Oracle.DatabaseError:
-            pass
-
-        cur_main = con_main.cursor()
-
-        sqls = ["alter database close normal", "alter database dismount"]
-        for sql in sqls:
-            try:
-                cur_main.execute(sql)
-            except cx_Oracle.DatabaseError:
-                sys.exit()
-
-        try:
-            con_main.shutdown(mode=cx_Oracle.DBSHUTDOWN_FINAL)
-        except cx_Oracle.DatabaseError:
-            sys.exit()'''
 
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Shutdown Completed")
 

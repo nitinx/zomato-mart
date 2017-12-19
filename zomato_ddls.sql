@@ -9,7 +9,7 @@ drop table zmt_locations;
 drop table zmt_locations_ext;
 drop table zmt_restaurants;
 drop table zmt_restaurants_ext;
-
+drop table zmt_parameters;
 
 --CREATE Tables
 create table zmt_categories
@@ -121,6 +121,14 @@ has_table_booking integer,
 insert_dt date
 );
 
+create table zmt_parameters
+(
+city_name varchar2(50),
+locality varchar2(50),
+active_flag varchar2(1),
+insert_dt date
+);
+
 select * from zmt_categories;
 select * from zmt_cities;
 select * from zmt_collections;
@@ -131,5 +139,4 @@ select * from zmt_locations;
 select * from zmt_locations_ext;
 select * from zmt_restaurants;
 select * from zmt_restaurants_ext;
-
-select COUNT(*) from zmt_categories where TO_CHAR(INSERT_DT,'YYYY') = TO_CHAR(SYSDATE, 'YYYY');
+select * from zmt_parameters;
