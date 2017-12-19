@@ -267,6 +267,8 @@ def get_search_bylocation(headers, query, entity_id, entity_type, print_flag):
         response = requests.get(base_url + '/search?' + search_parameters + '&start=' + str(results_start) + '&count='
                                 + str(results_shown) + '&sort=rating&order=desc', params='', headers=headers).json()
 
+        print(response)
+
         # results_found = response['results_found']
         results_start = response['results_start']
         results_shown = response['results_shown']
@@ -448,7 +450,7 @@ def main():
     headers = {'Accept': 'application/json', 'user-key': get_user_key()}
     city = 'Bangalore'
     localities = ['Sarjapur Road', 'HSR', 'Koramangala', 'Indiranagar', 'Kadubeesanahalli']
-    print_flag = 'N'
+    print_flag = 'Y'
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] City: " + city)
@@ -456,24 +458,24 @@ def main():
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Print Flag: " + print_flag)
 
     # Fetch Category data
-    get_categories(headers, print_flag)
+    '''get_categories(headers, print_flag)
 
     # Fetch City related data
     city_id = get_cities(headers, city, print_flag)
     get_cuisines(headers, city_id, print_flag)
-    get_establishments(headers, city_id, print_flag)
+    get_establishments(headers, city_id, print_flag)'''
 
     # Fetch Location related data
     for locality in range(len(localities)):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
         entity = get_locations(headers, localities[locality], print_flag)
-        get_location_details(headers, entity[0], entity[1], print_flag)
+        #get_location_details(headers, entity[0], entity[1], print_flag)
         get_search_bylocation(headers, localities[locality], entity[0], entity[1], print_flag)
 
     # Fetch Collection related data
-    get_collections(headers, city_id, print_flag)
+    '''get_collections(headers, city_id, print_flag)
     get_search_bycollection(headers, city, print_flag)
-    get_restaurant_bycollection(headers, print_flag)
+    get_restaurant_bycollection(headers, print_flag)'''
 
     # Close Oracle Connections
     db_cur_one.close()

@@ -132,3 +132,4 @@ select * from zmt_locations_ext;
 select * from zmt_restaurants;
 select * from zmt_restaurants_ext;
 
+select COUNT(*) from zmt_categories where TO_CHAR(INSERT_DT,'YYYY') = TO_CHAR(SYSDATE, 'YYYY');
