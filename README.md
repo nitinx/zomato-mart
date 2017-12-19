@@ -19,4 +19,11 @@ This process is currently manual and involves the following steps:
 
 Pre-Requisites
 ------------
-Zomato API key is required to connect to the APIs. This can be generated [here](https://developers.zomato.com/api).
+Zomato API key is required to connect to the APIs and can be generated [here](https://developers.zomato.com/api).
+
+
+In the Backlog
+------------
+1. Logging Mechanism
+2. New Restaurant Notification
+3. Visualization
