@@ -1,9 +1,11 @@
 # Zomato Mart
- [![Zomato](https://b.zmtcdn.com/images/developers/zomato-developers-logo.png)](http://www.zomato.com)
+
 
 A program to fetch restaurant related data from [zomato.com](https://www.zomato.com) via its public APIs and populate a set of Oracle tables. Purpose is to build and maintain history for restaurant ratings, restaurant collections, other restaurant attributes and location indices. Data fetch is restricted via parameters to a predefined set of cities/localities. Tables are designed to maintain history at a monthly grain. 
 
+[![Zomato](https://b.zmtcdn.com/images/developers/zomato-developers-logo.png)](https://developers.zomato.com/)
 * [Zomato API](https://developers.zomato.com/api) - Zomato API Documentation
+
 
 Installation
 ------------
