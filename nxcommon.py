@@ -7,30 +7,31 @@ import cx_Oracle
 import os
 from time import gmtime, strftime
 
+base_dir = 'e:\\GitHub\\python\\keys\\'
 
 class NXKey:
 
     def key_twitter(self):
         # Open KEY files
-        with open('e:\\GitHub\\python\\keys\\twitter.key') as key_file:
+        with open(base_dir + 'twitter.key') as key_file:
             key = json.load(key_file)
         return key
 
     def key_zomato(self):
         # Open KEY files
-        with open('e:\\GitHub\\python\\keys\\zomato.key') as key_file:
+        with open(base_dir + 'zomato.key') as key_file:
             key = json.load(key_file)
         return key
 
     def key_instagram(self):
         # Open KEY files
-        with open('e:\\GitHub\\python\\keys\\instagram.key') as key_file:
+        with open(base_dir + 'instagram.key') as key_file:
             key = json.load(key_file)
         return key
 
     def key_facebook(self):
         # Open KEY files
-        with open('e:\\GitHub\\python\\keys\\facebook.key') as key_file:
+        with open(base_dir + 'facebook.key') as key_file:
             key = json.load(key_file)
         return key
 
@@ -43,7 +44,7 @@ class NXOracle:
 
     def db_start(self):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Startup Initiated")
-        with open('e:\\GitHub\\python\\keys\\oracle_sysdba.key') as key_file_oracle:
+        with open(base_dir + 'oracle_sysdba.key') as key_file_oracle:
             key_oracle = json.load(key_file_oracle)
 
         connection = cx_Oracle.connect(key_oracle[0]['USER'],
@@ -61,7 +62,7 @@ class NXOracle:
 
     def db_stop(self):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Shutdown Initiated")
-        with open('e:\\GitHub\\python\\keys\\oracle_sysdba.key') as key_file_oracle:
+        with open(base_dir + 'oracle_sysdba.key') as key_file_oracle:
             key_oracle = json.load(key_file_oracle)
 
         con_main = cx_Oracle.connect(key_oracle[0]['USER'],
@@ -81,7 +82,7 @@ class NXOracle:
     def db_login(self):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Logon Initiated")
 
-        with open('e:\\GitHub\\python\\keys\\oracle.key') as key_file_oracle:
+        with open(base_dir + 'oracle.key') as key_file_oracle:
             key_oracle = json.load(key_file_oracle)
 
         connection = cx_Oracle.connect(key_oracle[0]['USER'],
