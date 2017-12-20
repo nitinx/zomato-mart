@@ -5,7 +5,7 @@ Program that:
  1. Fetches data from Zomato.com via Zomato's public APIs
  2. Populates the data into the Zomato datamart
  3. Maintains history at a monthly time grain
- 4. Fetch is currently restricted via parameters to Bangalore and its localities
+ 4. Fetch is currently restricted via parameters
 
  API Documentation: https://developers.zomato.com/api#headline1
 """
@@ -192,8 +192,6 @@ def get_locations(headers, query, print_flag):
 
     response = requests.get(base_url + '/locations?query=' + query + '&count=1', params='', headers=headers).json()
 
-    db_cur_one.execute("truncate table ZMT_LOCATIONS")
-
     if print_flag is 'Y':
         print(str(response['location_suggestions'][0]['entity_id'])
               + ' ' + response['location_suggestions'][0]['entity_type']
@@ -205,6 +203,8 @@ def get_locations(headers, query, print_flag):
               + ' ' + str(response['location_suggestions'][0]['country_id'])
               + ' ' + response['location_suggestions'][0]['country_name'])
 
+    db_cur_one.execute("delete from ZMT_LOCATIONS where ENTITY_ID = :entity_id ",
+                       entity_id=str(response['location_suggestions'][0]['entity_id']))
     db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
                        ":city_id, :city_name, :country_id, :country_name, SYSDATE)",
                        entity_id=response['location_suggestions'][0]['entity_id'],
@@ -393,7 +393,7 @@ def get_restaurant_bycollection(headers, print_flag):
                         from ZMT_COLLECTIONS_EXT 
                        where RESTAURANT_ID not in (select distinct RESTAURANT_ID from ZMT_RESTAURANTS)
                     order by RESTAURANT_ID""")
-    for values in db_cur_two:
+    for values in db_cur_one:
         res_id = values[0]
         search_parameters = ('res_id=' + str(res_id))
         response = requests.get(base_url + '/restaurant?' + search_parameters, params='', headers=headers).json()
