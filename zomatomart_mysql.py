@@ -71,15 +71,15 @@ def get_cities(headers, query):
     response = requests.get(base_url + '/cities?q=' + query + '&count=1', params='', headers=headers).json()
 
     # Check if data exists. Populate table if yes, ignore response otherwise.
-    db_cur_one.execute("select count(*) from ZMT_CITIES where CITY_NAME = %s", query)
+    db_cur_one.execute("select count(*) from ZMT_CITIES where city_name = '%s'" % (query))
     for values in db_cur_one:
         if values[0] is 0:
             print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_cities()] Adding City: " + query)
             db_cur_two.execute("insert into ZMT_CITIES(city_id, city_name, country_id, country_name, insert_dt) values "
-                               "(%d, %s, %d, %s, CURRENT_DATE()) ",
-                               (int(response['location_suggestions'][0]['id']),
+                               "(%s, %s, %s, %s, CURRENT_DATE()) ",
+                               (response['location_suggestions'][0]['id'],
                                 response['location_suggestions'][0]['name'],
-                                int(response['location_suggestions'][0]['country_id']),
+                                response['location_suggestions'][0]['country_id'],
                                 response['location_suggestions'][0]['country_name']))
             db_conn.commit()
 
@@ -108,9 +108,9 @@ def get_cuisines(headers, city_id):
                 print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_categories()] Adding Cuisine: "
                       + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
                 db_cur_two.execute("insert into ZMT_CUISINES(city_id, cuisine_id, cuisine_name, insert_dt) values "
-                                   "(%d, %d, %s, CURRENT_DATE())",
-                                   (int(city_id),
-                                    int(response['cuisines'][cuisine]['cuisine']['cuisine_id']),
+                                   "(%s, %s, %s, CURRENT_DATE())",
+                                   (city_id,
+                                    response['cuisines'][cuisine]['cuisine']['cuisine_id'],
                                     response['cuisines'][cuisine]['cuisine']['cuisine_name']))
             db_conn.commit()
         else:
@@ -142,9 +142,9 @@ def get_establishments(headers, city_id):
                 print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_establishments()] Adding Establishment: "
                       + response['establishments'][establishment]['establishment']['name'])
                 db_cur_two.execute("insert into ZMT_ESTABLISHMENTS(city_id, establishment_id, establishment_name, "
-                                   "insert_dt) values(%d, %d, %s, CURRENT_DATE())",
-                                   (int(city_id),
-                                    int(response['establishments'][establishment]['establishment']['id']),
+                                   "insert_dt) values(%s, %s, %s, CURRENT_DATE())",
+                                   (city_id,
+                                    response['establishments'][establishment]['establishment']['id'],
                                     response['establishments'][establishment]['establishment']['name']))
             db_conn.commit()
         else:
@@ -161,23 +161,23 @@ def get_collections(headers, city_id):
 
     # Request data and cleanup table
     response = requests.get(base_url + '/collections?city_id=' + city_id, params='', headers=headers).json()
-    db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%Y%m') and "
-                       "CITY_ID = :city_id", city_id=city_id)
+    db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%%Y%%m') and "
+                       "CITY_ID = %s" % city_id)
 
     # Loop through response and populate table
     for collection in range(len(response['collections'])):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_collections()] Adding Collection: "
               + response['collections'][collection]['collection']['title'])
         db_cur_one.execute("insert into ZMT_COLLECTIONS(period, city_id, collection_id, title, description, url, "
-                           "share_url, res_count, insert_dt) values(DATE_FORMAT(CURRENT_DATE(), '%Y%m'), %d, %d, %s, "
-                           "%s, %s, %s, %d, CURRENT_DATE())",
-                           (int(city_id),
-                            int(response['collections'][collection]['collection']['collection_id']),
+                           "share_url, restaurant_count, insert_dt) values(DATE_FORMAT(CURRENT_DATE(), '%%Y%%m'), %s, "
+                           "%s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                           (city_id,
+                            response['collections'][collection]['collection']['collection_id'],
                             response['collections'][collection]['collection']['title'],
                             response['collections'][collection]['collection']['description'],
                             response['collections'][collection]['collection']['url'],
                             response['collections'][collection]['collection']['share_url'],
-                            int(response['collections'][collection]['collection']['res_count'])))
+                            response['collections'][collection]['collection']['res_count']))
     db_conn.commit()
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_collections()] <END>")
     return 0
@@ -189,23 +189,24 @@ def get_locations(headers, query):
 
     # Request data and cleanup table
     response = requests.get(base_url + '/locations?query=' + query + '&count=1', params='', headers=headers).json()
-    db_cur_one.execute("delete from ZMT_LOCATIONS where ENTITY_ID = :entity_id ",
-                       entity_id=str(response['location_suggestions'][0]['entity_id']))
+    db_cur_one.execute("delete from ZMT_LOCATIONS where ENTITY_ID = %s" %
+                       str(response['location_suggestions'][0]['entity_id']))
 
     # Populate table
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_locations()] Adding Location: "
           + response['location_suggestions'][0]['title'])
-    db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
-                       ":city_id, :city_name, :country_id, :country_name, CURRENT_DATE())",
-                       entity_id=response['location_suggestions'][0]['entity_id'],
-                       entity_type=response['location_suggestions'][0]['entity_type'],
-                       title=response['location_suggestions'][0]['title'],
-                       latitude=response['location_suggestions'][0]['latitude'],
-                       longitude=response['location_suggestions'][0]['longitude'],
-                       city_id=response['location_suggestions'][0]['city_id'],
-                       city_name=response['location_suggestions'][0]['city_name'],
-                       country_id=response['location_suggestions'][0]['country_id'],
-                       country_name=response['location_suggestions'][0]['country_name'])
+    db_cur_one.execute("insert into ZMT_LOCATIONS(entity_id, entity_type, title, latitude, longitude, city_id, "
+                       "city_name, country_id, country_name, insert_dt) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                       "CURRENT_DATE())",
+                       (response['location_suggestions'][0]['entity_id'],
+                        response['location_suggestions'][0]['entity_type'],
+                        response['location_suggestions'][0]['title'],
+                        response['location_suggestions'][0]['latitude'],
+                        response['location_suggestions'][0]['longitude'],
+                        response['location_suggestions'][0]['city_id'],
+                        response['location_suggestions'][0]['city_name'],
+                        response['location_suggestions'][0]['country_id'],
+                        response['location_suggestions'][0]['country_name']))
     db_conn.commit()
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_locations()] <END>")
 
@@ -219,8 +220,8 @@ def get_location_details(headers, entity_id, entity_type, debug_mode):
     # Request data and cleanup table
     response = requests.get(base_url + '/location_details?entity_id=' + entity_id + '&entity_type=' + entity_type,
                             params='', headers=headers).json()
-    db_cur_one.execute("delete from ZMT_LOCATIONS_EXT where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%Y%m') and "
-                       "ENTITY_ID = :entity_id", entity_id=entity_id)
+    db_cur_one.execute("delete from ZMT_LOCATIONS_EXT where period = DATE_FORMAT(CURRENT_DATE(), '%%Y%%m') and "
+                       "entity_id = %s" % (entity_id))
 
     # Populate table
     if debug_mode is 'Y':
@@ -232,16 +233,16 @@ def get_location_details(headers, entity_id, entity_type, debug_mode):
               + ' ' + str(response['popularity_res'])
               + ' ' + str(response['nightlife_res'])
               + ' ' + str(response['num_restaurant']))
-    db_cur_one.execute("insert into ZMT_LOCATIONS_EXT values (DATE_FORMAT(CURRENT_DATE(), '%Y%m'), :entity_id, "
-                       ":popularity, :nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, "
-                       ":num_restaurant, CURRENT_DATE())",
-                       entity_id=entity_id,
-                       popularity=response['popularity'],
-                       nightlife_index=response['nightlife_index'],
-                       top_cuisines=str(response['top_cuisines']),
-                       popularity_res=response['popularity_res'],
-                       nightlife_res=response['nightlife_res'],
-                       num_restaurant=response['num_restaurant'])
+    db_cur_one.execute("insert into ZMT_LOCATIONS_EXT(period, entity_id, popularity, nightlife_index, top_cuisines, "
+                       "popularity_res, nightlife_res, num_restaurant, insert_dt) values (DATE_FORMAT(CURRENT_DATE(), "
+                       "'%%Y%%m'), %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                       (entity_id,
+                        response['popularity'],
+                        response['nightlife_index'],
+                        str(response['top_cuisines']),
+                        response['popularity_res'],
+                        response['nightlife_res'],
+                        response['num_restaurant']))
     db_conn.commit()
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_location_details()] <END>")
@@ -288,52 +289,44 @@ def get_search_bylocation(headers, query, entity_id, entity_type, debug_mode):
                       + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_table_booking']))
 
             # Check if Restaurant data exists. Populate table if no, ignore otherwise.
-            db_cur_one.execute("select count(*) from ZMT_RESTAURANTS where RESTAURANT_ID = :restaurant_id",
-                               restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
+            db_cur_one.execute("select count(*) from ZMT_RESTAURANTS where restaurant_id = %s" %
+                               (response['restaurants'][restaurant]['restaurant']['id']))
             for values in db_cur_one:
                 if values[0] is 0:
                     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_search_bylocation()] Adding Restaurant: "
                           + response['restaurants'][restaurant]['restaurant']['name'] + ', '
                           + response['restaurants'][restaurant]['restaurant']['location']['locality'])
-                    db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
-                                       ":locality, :city_id, :latitude, :longitude, :search_parameters, "
-                                       "CURRENT_DATE())",
-                                       restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                       restaurant_name=response['restaurants'][restaurant]['restaurant']['name'],
-                                       url=response['restaurants'][restaurant]['restaurant']['url'],
-                                       locality=response['restaurants'][restaurant]['restaurant']['location'][
-                                           'locality'],
-                                       city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
-                                       latitude=response['restaurants'][restaurant]['restaurant']['location'][
-                                           'latitude'],
-                                       longitude=response['restaurants'][restaurant]['restaurant']['location'][
-                                           'longitude'],
-                                       search_parameters=search_parameters)
+                    db_cur_two.execute("insert into ZMT_RESTAURANTS(restaurant_id, restaurant_name, url, loc_locality, "
+                                       "loc_city_id, loc_latitude, loc_longitude, search_parameters, insert_dt) values "
+                                       "(%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                                       (response['restaurants'][restaurant]['restaurant']['id'],
+                                        response['restaurants'][restaurant]['restaurant']['name'],
+                                        response['restaurants'][restaurant]['restaurant']['url'],
+                                        response['restaurants'][restaurant]['restaurant']['location']['locality'],
+                                        response['restaurants'][restaurant]['restaurant']['location']['city_id'],
+                                        response['restaurants'][restaurant]['restaurant']['location']['latitude'],
+                                        response['restaurants'][restaurant]['restaurant']['location']['longitude'],
+                                        search_parameters))
 
             # Cleanup current month's data, if any
             db_cur_one.execute("""delete from ZMT_RESTAURANTS_EXT 
-                                        where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%Y%m') 
-                                          and RESTAURANT_ID = :restaurant_id""",
-                               restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
+                                        where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%%Y%%m') 
+                                          and RESTAURANT_ID = %s""" %
+                               (response['restaurants'][restaurant]['restaurant']['id']))
 
             # Populate table
-            db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT values (DATE_FORMAT(CURRENT_DATE(), '%Y%m'), "
-                               ":restaurant_id, :cuisines, :average_cost_for_two, :user_rating_aggregate, "
-                               ":user_rating_text, :user_rating_votes, :has_online_delivery, :has_table_booking, "
-                               "CURRENT_DATE())",
-                               restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                               cuisines=response['restaurants'][restaurant]['restaurant']['cuisines'],
-                               average_cost_for_two=response['restaurants'][restaurant]['restaurant']
-                               ['average_cost_for_two'],
-                               user_rating_aggregate=response['restaurants'][restaurant]['restaurant']['user_rating']
-                               ['aggregate_rating'],
-                               user_rating_text=response['restaurants'][restaurant]['restaurant']['user_rating']
-                               ['rating_text'],
-                               user_rating_votes=response['restaurants'][restaurant]['restaurant']['user_rating'][
-                                   'votes'],
-                               has_online_delivery=response['restaurants'][restaurant]['restaurant'][
-                                   'has_online_delivery'],
-                               has_table_booking=response['restaurants'][restaurant]['restaurant']['has_table_booking'])
+            db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT(period, restaurant_id, cuisines, average_cost_for_two, "
+                               "user_rating_aggregate, user_rating_text, user_rating_votes, has_online_delivery, "
+                               "has_table_booking, insert_dt) values (DATE_FORMAT(CURRENT_DATE(), '%%Y%%m'), %s, %s, "
+                               "%s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                               (response['restaurants'][restaurant]['restaurant']['id'],
+                                response['restaurants'][restaurant]['restaurant']['cuisines'],
+                                response['restaurants'][restaurant]['restaurant']['average_cost_for_two'],
+                                response['restaurants'][restaurant]['restaurant']['user_rating']['aggregate_rating'],
+                                response['restaurants'][restaurant]['restaurant']['user_rating']['rating_text'],
+                                response['restaurants'][restaurant]['restaurant']['user_rating']['votes'],
+                                response['restaurants'][restaurant]['restaurant']['has_online_delivery'],
+                                response['restaurants'][restaurant]['restaurant']['has_table_booking']))
         results_start = results_start + 20
 
         # Determine request limit
@@ -350,7 +343,7 @@ def get_search_bycollection(headers, query, debug_mode):
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_search_bycollection()] <START>")
 
     # Cleanup current month's data, if any
-    db_cur_one.execute("delete from ZMT_COLLECTIONS_EXT where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%Y%m')")
+    db_cur_one.execute("delete from ZMT_COLLECTIONS_EXT where PERIOD = DATE_FORMAT(CURRENT_DATE(), '%%Y%%m')")
 
     # Loop through Collection list
     db_cur_two.execute("select distinct CITY_ID, COLLECTION_ID from ZMT_COLLECTIONS order by CITY_ID, COLLECTION_ID")
@@ -380,12 +373,13 @@ def get_search_bycollection(headers, query, debug_mode):
                     print(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
                           + ' ' + str(collection_id)
                           + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
-                db_cur_one.execute("insert into ZMT_COLLECTIONS_EXT values (DATE_FORMAT(CURRENT_DATE(), '%Y%m'), "
-                                   ":city_id, :collection_id, :restaurant_id, :search_parameters, CURRENT_DATE())",
-                                   city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
-                                   collection_id=collection_id,
-                                   restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                   search_parameters=search_parameters)
+                db_cur_one.execute("insert into ZMT_COLLECTIONS_EXT(period, city_id, collection_id, restaurant_id, "
+                                   "search_parameters, insert_dt) values (DATE_FORMAT(CURRENT_DATE(), '%%Y%%m'), "
+                                   "%s, %s, %s, %s, CURRENT_DATE())",
+                                   (response['restaurants'][restaurant]['restaurant']['location']['city_id'],
+                                    collection_id,
+                                    response['restaurants'][restaurant]['restaurant']['id'],
+                                    search_parameters))
             results_start = results_start + 20
 
             # Determine request limit
@@ -431,28 +425,29 @@ def get_restaurant_bycollection(headers, debug_mode):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_search_bylocation()] Adding Restaurant: "
               + response['name'] + ', '
               + response['location']['locality'])
-        db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
-                           ":locality, :city_id, :latitude, :longitude, :search_parameters, CURRENT_DATE())",
-                           restaurant_id=str(response['id']),
-                           restaurant_name=response['name'],
-                           url=response['url'],
-                           locality=response['location']['locality'],
-                           city_id=str(response['location']['city_id']),
-                           latitude=str(response['location']['latitude']),
-                           longitude=str(response['location']['longitude']),
-                           search_parameters=search_parameters)
-        db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT values (DATE_FORMAT(CURRENT_DATE(), '%Y%m'), "
-                           ":restaurant_id, :cuisines, :average_cost_for_two, :user_rating_aggregate, "
-                           ":user_rating_text, :user_rating_votes, :has_online_delivery, :has_table_booking, "
-                           "CURRENT_DATE())",
-                           restaurant_id=str(response['id']),
-                           cuisines=response['cuisines'],
-                           average_cost_for_two=str(response['average_cost_for_two']),
-                           user_rating_aggregate=str(response['user_rating']['aggregate_rating']),
-                           user_rating_text=response['user_rating']['rating_text'],
-                           user_rating_votes=str(response['user_rating']['votes']),
-                           has_online_delivery=str(response['has_online_delivery']),
-                           has_table_booking=str(response['has_table_booking']))
+        db_cur_two.execute("insert into ZMT_RESTAURANTS(restaurant_id, restaurant_name, url, loc_locality, "
+                           "loc_city_id, loc_latitude, loc_longitude, search_parameters, insert_dt) values (%s, %s, "
+                           "%s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                           (response['id'],
+                            response['name'],
+                            response['url'],
+                            response['location']['locality'],
+                            response['location']['city_id'],
+                            str(response['location']['latitude']),
+                            str(response['location']['longitude']),
+                            search_parameters))
+        db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT(period, "
+                           "restaurant_id, cuisines, average_cost_for_two, user_rating_aggregate, user_rating_text, "
+                           "user_rating_votes, has_online_delivery, has_table_booking, insert_dt) values "
+                           "(DATE_FORMAT(CURRENT_DATE(), '%%Y%%m'), %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE())",
+                           (response['id'],
+                            response['cuisines'],
+                            response['average_cost_for_two'],
+                            response['user_rating']['aggregate_rating'],
+                            response['user_rating']['rating_text'],
+                            response['user_rating']['votes'],
+                            response['has_online_delivery'],
+                            response['has_table_booking']))
         db_conn.commit()
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_collection_restaurant()] <END>")

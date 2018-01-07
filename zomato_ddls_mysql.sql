@@ -1,12 +1,12 @@
 /*DROP Tables*/
 drop table ZMT_CATEGORIES;
 drop table ZMT_CITIES;
-drop table ZMT_COLLECTIONS;
-drop table ZMT_COLLECTIONS_EXT;
 drop table ZMT_CUISINES;
 drop table ZMT_ESTABLISHMENTS;
 drop table ZMT_LOCATIONS;
 drop table ZMT_LOCATIONS_EXT;
+drop table ZMT_COLLECTIONS;
+drop table ZMT_COLLECTIONS_EXT;
 drop table ZMT_RESTAURANTS;
 drop table ZMT_RESTAURANTS_EXT;
 drop table ZMT_PARAMETERS;
@@ -25,29 +25,6 @@ city_id integer not null,
 city_name varchar(50),
 country_id integer,
 country_name varchar(50),
-insert_dt date
-);
-
-create table ZMT_COLLECTIONS
-(
-period integer not null,
-city_id integer not null,
-collection_id integer not null,
-title varchar(200),
-description varchar(500),
-url varchar(250),
-share_url varchar(100),
-restaurant_count integer,
-insert_dt date
-);
-
-create table ZMT_COLLECTIONS_EXT
-(
-period integer not null,
-city_id integer not null,
-collection_id integer not null,
-restaurant_id integer not null,
-search_parameters varchar(200),
 insert_dt date
 );
 
@@ -94,6 +71,29 @@ num_restaurant integer,
 insert_dt date
 );
 
+create table ZMT_COLLECTIONS
+(
+period integer not null,
+city_id integer not null,
+collection_id integer not null,
+title varchar(200),
+description varchar(500),
+url varchar(250),
+share_url varchar(100),
+restaurant_count integer,
+insert_dt date
+);
+
+create table ZMT_COLLECTIONS_EXT
+(
+period integer not null,
+city_id integer not null,
+collection_id integer not null,
+restaurant_id integer not null,
+search_parameters varchar(200),
+insert_dt date
+);
+
 create table ZMT_RESTAURANTS
 (
 restaurant_id integer not null,
@@ -131,14 +131,13 @@ insert_dt date
 
 select * from ZMT_CATEGORIES;
 select * from ZMT_CITIES;
-select * from ZMT_COLLECTIONS;
-select * from ZMT_COLLECTIONS_EXT;
 select * from ZMT_CUISINES;
 select * from ZMT_ESTABLISHMENTS;
 select * from ZMT_LOCATIONS;
 select * from ZMT_LOCATIONS_EXT;
+select * from ZMT_COLLECTIONS;
+select * from ZMT_COLLECTIONS_EXT;
 select * from ZMT_RESTAURANTS;
 select * from ZMT_RESTAURANTS_EXT;
 select * from ZMT_PARAMETERS;
 
-select * from ZMT_PARAMETERS;
