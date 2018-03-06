@@ -12,10 +12,13 @@ Program that:
 
 import requests
 import json
-from mylibrary.nxcommon import NXKey
+import logging
+#from mylibrary.nxcommon import NXKey
 from mylibrary.nxcommon import NXOracle
 from mylibrary.http import BaseHTTPClient
 from time import gmtime, strftime
+
+log = logging.getLogger(__name__)
 
 # Define Zomato Base URL
 base_url = "https://developers.zomato.com/api/v2.1"
@@ -26,9 +29,59 @@ db_cur_one = db_conn.cursor()
 db_cur_two = db_conn.cursor()
 
 
-def get_user_key():
-    """Get the Zomato API Key"""
-    return NXKey().key_zomato()[0]['API_KEY']
+class ZomatoClient(BaseHTTPClient):
+
+    def __init__(self, user_key):
+        super(ZomatoClient, self).__init__(
+            "https://developers.zomato.com/api/v2.1",
+            headers={"user-key": user_key}
+        )
+
+    def get_categories(self):
+        return self.get("/categories")
+
+    def get_cities(self):
+        return self.get("/cities")
+
+    def get_cuisines(self):
+        return self.get("/cuisines")
+
+    def get_establishments(self):
+        return self.get("/establishments")
+
+    def get_locations(self):
+        return self.get("/locations")
+
+    def get_location_details(self):
+        return self.get("/location_details")
+
+    def get_search(self):
+        return self.get("/search")
+
+    def get_collections(self):
+        return self.get("/collections")
+
+    def get_restaurant(self):
+        return self.get("/restaurant")
+
+
+class SuperiorZomatoClient(ZomatoClient):
+
+    def __init__(self, *args, **kwargs):
+        super(SuperiorZomatoClient, self).__init__(*args, **kwargs)
+
+    def get_categories(self):
+        log.debug("Calling get_categories method.")
+        raw_categories = super(SuperiorZomatoClient, self).get_categories()
+        refined = {}
+        for cat in raw_categories["categories"]:
+            _id = cat["categories"]["id"]
+            _name = cat["categories"]["name"]
+            refined[_id] = _name
+        log.info("Result is: {}".format(
+            json.dumps(refined, indent=4, sort_keys=True)
+        ))
+        return refined
 
 
 def get_categories(headers):

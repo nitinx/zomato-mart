@@ -140,4 +140,3 @@ select * from ZMT_COLLECTIONS_EXT;
 select * from ZMT_RESTAURANTS;
 select * from ZMT_RESTAURANTS_EXT;
 select * from ZMT_PARAMETERS;
-
