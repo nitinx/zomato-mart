@@ -13,25 +13,61 @@ Program that:
 import requests
 import logging
 import json
-from mylibrary.nxcommon import APIKey
-from mylibrary.nxcommon import DBOracle
-#from mylibrary.http import BaseHTTPClient
+from mylibrary.apikey import APIKey
+from mylibrary.db_oracle import OracleClient
 from time import gmtime, strftime
 
 # Define Zomato Base URL
 base_url = "https://developers.zomato.com/api/v2.1"
 
 # Define Oracle Variables
-db_conn = DBOracle().db_login()
+DB = OracleClient()
+db_conn = DB.db_login()
 db_cur_one = db_conn.cursor()
 db_cur_two = db_conn.cursor()
 
 log = logging.getLogger(__name__)
 
 
-def get_user_key():
-    """Get the Zomato API Key"""
-    return APIKey().key_zomato()[0]['API_KEY']
+class ZomatoParameters:
+
+    def getparam_city_names(self):
+        """Retrieve Parameter | City Names"""
+        log.info("getparam_city_names() | <START>")
+
+        # Retrieve Parameter | City Names
+        db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+        for count in db_cur_one:
+            if count[0] is 0:
+                log.info("Parameter: CITY_NAME missing. Please define.")
+            else:
+                db_cur_two.execute("select distinct CITY_NAME from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+                for city_name in db_cur_two:
+                    city = city_name[0]
+
+        log.info("PARAMETER City: " + city)
+        log.info("getparam_city_names() | <END>")
+        return city
+
+    def getparam_localities(self):
+        """Retrieve Parameter | Localities"""
+        log.info("getparam_localities() | <START>")
+        localities = []
+
+        # Retrieve Parameter | Localities
+        db_cur_one.execute("select count(distinct LOCALITY) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+        for count in db_cur_one:
+            if count[0] is 0:
+                log.info("Parameter: LOCALITY missing. Please define.")
+
+            else:
+                db_cur_two.execute("select distinct LOCALITY from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
+                for locality in db_cur_two:
+                    localities.append(locality[0])
+
+        log.info("PARAMETER Locality: " + str(localities))
+        log.info("getparam_localities() | <END>")
+        return localities
 
 
 class ZomatoClient:
@@ -45,8 +81,6 @@ class ZomatoClient:
         for values in db_cur_one:
             if values[0] is 0:
                 log.info("Data stale/unavailable. Refreshing...")
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_categories()] Data stale/unavailable. "
-                #                                                "Refreshing...")
 
                 # Request data and cleanup table
                 response = requests.get(base_url + '/categories', params='', headers=headers).json()
@@ -55,15 +89,12 @@ class ZomatoClient:
                 # Loop through response and populate table
                 for category in range(len(response['categories'])):
                     log.info("Adding Category: " + response['categories'][category]['categories']['name'])
-                    #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_categories()] Adding Category: "
-                    #      + response['categories'][category]['categories']['name'])
                     db_cur_two.execute("insert into ZMT_CATEGORIES values (:category_id, :category_name, SYSDATE)",
                                        category_id=response['categories'][category]['categories']['id'],
                                        category_name=response['categories'][category]['categories']['name'])
                 db_conn.commit()
 
             else:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_categories()] Data is current. Refresh skipped.")
                 log.info("Data is current. Refresh skipped.")
 
         log.info("get_categories() | <END>")
@@ -79,7 +110,6 @@ class ZomatoClient:
         db_cur_one.execute("select count(*) from ZMT_CITIES where CITY_NAME = :name", name=query)
         for values in db_cur_one:
             if values[0] is 0:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_cities()] Adding City: " + query)
                 log.info("Adding City: " + query)
 
                 db_cur_two.execute("insert into ZMT_CITIES values (:city_id, :city_name, :country_id, :country_name, "
@@ -101,8 +131,6 @@ class ZomatoClient:
         db_cur_one.execute("select COUNT(*) from zmt_cuisines where TO_CHAR(INSERT_DT,'YYYY') = TO_CHAR(SYSDATE, 'YYYY')")
         for values in db_cur_one:
             if values[0] is 0:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_cuisines()] Data is stale/unavailable. "
-                #                                                "Refreshing...")
                 log.info("Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
@@ -111,8 +139,6 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for cuisine in range(len(response['cuisines'])):
-                    #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_categories()] Adding Cuisine: "
-                    #      + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
                     log.info("Adding Cuisine: " + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
 
                     db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, SYSDATE)",
@@ -121,7 +147,6 @@ class ZomatoClient:
                                        cuisine_name=response['cuisines'][cuisine]['cuisine']['cuisine_name'])
                 db_conn.commit()
             else:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_cuisines()] Data is current. Refresh skipped.")
                 log.info("Data is current. Refresh skipped.")
 
         log.info("get_cuisines() | <END>")
@@ -137,8 +162,6 @@ class ZomatoClient:
 
         for values in db_cur_one:
             if values[0] is 0:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_establishments()] Data is stale/unavailable. "
-                #                                                "Refreshing...")
                 log.info("Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
@@ -147,8 +170,6 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for establishment in range(len(response['establishments'])):
-                    #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_establishments()] Adding Establishment: "
-                    #      + response['establishments'][establishment]['establishment']['name'])
                     log.info("Adding Establishment: "
                              + response['establishments'][establishment]['establishment']['name'])
 
@@ -160,8 +181,6 @@ class ZomatoClient:
                                            'name'])
                 db_conn.commit()
             else:
-                #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_establishments()] Data is current. "
-                #                                                "Refresh skipped.")
                 log.info("Data is current. Refreshing...")
 
         log.info("get_establishments() | <END>")
@@ -178,8 +197,6 @@ class ZomatoClient:
 
         # Loop through response and populate table
         for collection in range(len(response['collections'])):
-            #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_collections()] Adding Collection: "
-            #      + response['collections'][collection]['collection']['title'])
             log.info("Adding Collection: " + response['collections'][collection]['collection']['title'])
 
             db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, :collection_id, "
@@ -205,8 +222,6 @@ class ZomatoClient:
                            entity_id=str(response['location_suggestions'][0]['entity_id']))
 
         # Populate table
-        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_locations()] Adding Location: "
-        #      + response['location_suggestions'][0]['title'])
         log.info("Adding Location: " + response['location_suggestions'][0]['title'])
 
         db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
@@ -303,9 +318,6 @@ class ZomatoClient:
                                    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
                 for values in db_cur_one:
                     if values[0] is 0:
-                        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_search_bylocation()] Adding Restaurant: "
-                        #      + response['restaurants'][restaurant]['restaurant']['name'] + ', '
-                        #      + response['restaurants'][restaurant]['restaurant']['location']['locality'])
                         log.info("Adding Restaurant: " + response['restaurants'][restaurant]['restaurant']['name']
                                  + ', ' + response['restaurants'][restaurant]['restaurant']['location']['locality'])
 
@@ -438,8 +450,6 @@ class ZomatoClient:
                       + ' ' + str(response['user_rating']['votes'])
                       + ' ' + str(response['has_online_delivery'])
                       + ' ' + str(response['has_table_booking']))
-            #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [get_search_bylocation()] Adding Restaurant: "
-            #      + response['name'] + ', ' + response['location']['locality'])
             log.info("Adding Restaurant: " + response['name'] + ', ' + response['location']['locality'])
             db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
                                ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",

@@ -23,7 +23,7 @@ class APIKey:
         return key
 
 
-class DBOracle:
+class OracleClient:
 
     def db_dos_start(self):
         os.system("C:\Windows\SysWOW64\cmd.exe  /k C:\oraclexe\app\oracle\product\11.2.0\server\bin\StartDB.bat")
@@ -83,7 +83,7 @@ class DBOracle:
         return connection
 
 
-class DBMySQL:
+class MySQLClient:
 
     def db_dos_start(self):
         os.system("C:\Windows\SysWOW64\cmd.exe  /k C:\oraclexe\app\oracle\product\11.2.0\server\bin\StartDB.bat")

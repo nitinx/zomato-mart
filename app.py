@@ -13,94 +13,68 @@ Program that:
 import requests
 import logging
 import json
-from mylibrary.nxcommon import APIKey
-from mylibrary.nxcommon import DBOracle
-#from mylibrary.http import BaseHTTPClient
+from mylibrary.apikey import APIKey
+from mylibrary.db_oracle import OracleClient
+from mylibrary.zomato import ZomatoParameters
 from mylibrary.zomato import ZomatoClient
 from time import gmtime, strftime
 
-# Define Zomato Base URL
-base_url = "https://developers.zomato.com/api/v2.1"
-
-# Define Oracle Variables
-DB = DBOracle()
-db_conn = DB.db_login()
-#db_conn = DBOracle().db_login()
-db_cur_one = db_conn.cursor()
-db_cur_two = db_conn.cursor()
 
 log = logging.getLogger(__name__)
 
 
-def get_user_key():
-    """Get the Zomato API Key"""
-    return APIKey().key_zomato()[0]['API_KEY']
-
-
 if __name__ == '__main__':
+
+    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
+
+    # Initialize variables
+    debug_mode = 'N'
+    city = ''
+    localities = []
+
+    # Logger | Initialize
     fmt_string = "%(asctime)s | %(levelname)s | %(module)s | %(message)s"
     fmtr = logging.Formatter(fmt=fmt_string)
     sh = logging.StreamHandler()
     sh.setFormatter(fmtr)
     my_lib_logger = logging.getLogger("mylibrary")
     my_lib_logger.addHandler(sh)
-    my_lib_logger.setLevel("DEBUG")
 
-    zom = ZomatoClient()
+    # Logger | Set Level
+    my_lib_logger.setLevel("INFO")
 
-    # Initialize variables
-    headers = {'Accept': 'application/json', 'user-key': get_user_key()}
-    debug_mode = 'N'
-    city = ''
-    localities = []
+    # Initialize Zomato API Key Objects
+    ZomatoAPIKey = APIKey()
+    api_key = ZomatoAPIKey.key_zomato()[0]['API_KEY']
+    headers = {'Accept': 'application/json', 'user-key': api_key}
 
-    #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
-    log.info("main() | <START>")
-    log.debug("main() | <START>")
+    # Initialize Zomato Objects
+    ZmtParams = ZomatoParameters()
+    ZmtClient = ZomatoClient()
 
-    # Retrieve Parameter | City Names
-    db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-    for count in db_cur_one:
-        if count[0] is 0:
-            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: CITY_NAME missing. Please define. ")
-        else:
-            db_cur_two.execute("select distinct CITY_NAME from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-            for city_name in db_cur_two:
-                city = city_name[0]
-
-    # Retrieve Parameter | Localities
-    db_cur_one.execute("select count(distinct LOCALITY) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-    for count in db_cur_one:
-        if count[0] is 0:
-            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: LOCALITY missing. Please define. ")
-        else:
-            db_cur_two.execute("select distinct LOCALITY from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-            for locality in db_cur_two:
-                localities.append(locality[0])
-
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER City: " + city)
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Localities: " + str(localities))
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Debug Mode: " + debug_mode)
+    # Retrieve Parameters
+    city = ZmtParams.getparam_city_names()
+    localities = ZmtParams.getparam_localities()
 
     # Fetch Category data
-    zom.get_categories(headers)
+    ZmtClient.get_categories(headers)
 
     # Fetch City data
-    city_id = zom.get_cities(headers, city)
-    zom.get_cuisines(headers, city_id)
-    zom.get_establishments(headers, city_id)
+    city_id = ZmtClient.get_cities(headers, city)
+    ZmtClient.get_cuisines(headers, city_id)
+    ZmtClient.get_establishments(headers, city_id)
 
     # Fetch Location/Restaurant data
     for locality in range(len(localities)):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
-        entity = zom.get_locations(headers, localities[locality])
-        zom.get_location_details(headers, entity[0], entity[1], debug_mode)
-        zom.get_search_bylocation(headers, localities[locality], entity[0], entity[1], debug_mode)
+        entity = ZmtClient.get_locations(headers, localities[locality])
+        ZmtClient.get_location_details(headers, entity[0], entity[1], debug_mode)
+        ZmtClient.get_search_bylocation(headers, localities[locality], entity[0], entity[1], debug_mode)
 
     # Fetch Collection/Restaurant data
-    zom.get_collections(headers, city_id)
-    zom.get_search_bycollection(headers, city, debug_mode)
-    zom.get_restaurant_bycollection(headers, debug_mode)
+    ZmtClient.get_collections(headers, city_id)
+    ZmtClient.get_search_bycollection(headers, city, debug_mode)
+    ZmtClient.get_restaurant_bycollection(headers, debug_mode)
 
     # Close Oracle Connections
     db_cur_one.close()
