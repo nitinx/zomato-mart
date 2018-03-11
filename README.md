@@ -14,7 +14,7 @@ This process is currently manual and involves the following steps:
     1. Create Zomato Mart tables (execute zomato_ddls.sql)
     2. Setup Parameters to filter data by City/Locality (edit and execute zomato_parameters.sql)
     3. Copy over the .py files to the appropriate folders
-    4. Modify API key file location in nxcommon.py
+    4. Modify API key file location in apikey.py
     5. Schedule program to run monthly
 
 Pre-Requisites
@@ -24,6 +24,5 @@ Zomato API key is required to connect to the APIs and can be generated [here](ht
 
 In the Backlog
 ------------
-1. Logging Mechanism
-2. New Restaurant Notification
-3. Visualization
+1. New Restaurant Notification
+2. Visualization

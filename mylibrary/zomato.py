@@ -1,11 +1,10 @@
-# 28 Nov 2017 | Zomato Data Mart
+# 28 Nov 2017 | Zomato Client
 
-"""Zomato Datamart
-Program that:
- 1. Fetches data from Zomato.com via Zomato's public APIs
- 2. Populates the data into the Zomato datamart
- 3. Maintains history at a monthly time grain
- 4. Fetch is currently restricted via parameters
+"""Zomato Client
+Library that:
+ 1. From RDBMS, retrieves parameters that restrict data fetched from Zomato.com
+ 2. Fetches data from Zomato.com via Zomato's public APIs
+ 3. Populates the data into the Zomato datamart
 
  API Documentation: https://developers.zomato.com/api#headline1
 """
@@ -13,7 +12,6 @@ Program that:
 import requests
 import logging
 import json
-from mylibrary.apikey import APIKey
 from mylibrary.db_oracle import OracleClient
 from time import gmtime, strftime
 
@@ -34,6 +32,7 @@ class ZomatoParameters:
     def getparam_city_names(self):
         """Retrieve Parameter | City Names"""
         log.info("getparam_city_names() | <START>")
+        city = ''
 
         # Retrieve Parameter | City Names
         db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
@@ -77,7 +76,8 @@ class ZomatoClient:
         log.info("get_categories() | <START>")
 
         # Check if data exists / is stale (> 1 month)
-        db_cur_one.execute("select COUNT(*) from zmt_categories where TO_CHAR(INSERT_DT,'YYYY') = TO_CHAR(SYSDATE, 'YYYY')")
+        db_cur_one.execute("select COUNT(*) from zmt_categories where TO_CHAR(INSERT_DT,'YYYY') = "
+                           "TO_CHAR(SYSDATE, 'YYYY')")
         for values in db_cur_one:
             if values[0] is 0:
                 log.info("Data stale/unavailable. Refreshing...")
@@ -128,7 +128,8 @@ class ZomatoClient:
         log.info("get_cuisines() | <START>")
 
         # Check if data exists / is stale (> 1 month)
-        db_cur_one.execute("select COUNT(*) from zmt_cuisines where TO_CHAR(INSERT_DT,'YYYY') = TO_CHAR(SYSDATE, 'YYYY')")
+        db_cur_one.execute("select COUNT(*) from zmt_cuisines where TO_CHAR(INSERT_DT,'YYYY') = "
+                           "TO_CHAR(SYSDATE, 'YYYY')")
         for values in db_cur_one:
             if values[0] is 0:
                 log.info("Data is stale/unavailable. Refreshing...")
@@ -141,7 +142,8 @@ class ZomatoClient:
                 for cuisine in range(len(response['cuisines'])):
                     log.info("Adding Cuisine: " + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
 
-                    db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, SYSDATE)",
+                    db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, "
+                                       "SYSDATE)",
                                        city_id=city_id,
                                        cuisine_id=response['cuisines'][cuisine]['cuisine']['cuisine_id'],
                                        cuisine_name=response['cuisines'][cuisine]['cuisine']['cuisine_name'])
@@ -165,7 +167,8 @@ class ZomatoClient:
                 log.info("Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
-                response = requests.get(base_url + '/establishments?city_id=' + city_id, params='', headers=headers).json()
+                response = requests.get(base_url + '/establishments?city_id=' + city_id, params='',
+                                        headers=headers).json()
                 db_cur_two.execute("truncate table ZMT_ESTABLISHMENTS")
 
                 # Loop through response and populate table
@@ -176,9 +179,10 @@ class ZomatoClient:
                     db_cur_two.execute("insert into ZMT_ESTABLISHMENTS values (:city_id, :establishment_id, "
                                        ":establishment_name, SYSDATE)",
                                        city_id=city_id,
-                                       establishment_id=response['establishments'][establishment]['establishment']['id'],
-                                       establishment_name=response['establishments'][establishment]['establishment'][
-                                           'name'])
+                                       establishment_id=response['establishments'][establishment]['establishment']
+                                       ['id'],
+                                       establishment_name=response['establishments'][establishment]['establishment']
+                                       ['name'])
                 db_conn.commit()
             else:
                 log.info("Data is current. Refreshing...")
@@ -192,15 +196,16 @@ class ZomatoClient:
 
         # Request data and cleanup table
         response = requests.get(base_url + '/collections?city_id=' + city_id, params='', headers=headers).json()
-        db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM') and CITY_ID = :city_id",
+        db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM') and "
+                           "CITY_ID = :city_id",
                            city_id=city_id)
 
         # Loop through response and populate table
         for collection in range(len(response['collections'])):
             log.info("Adding Collection: " + response['collections'][collection]['collection']['title'])
 
-            db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, :collection_id, "
-                               ":title, :description, :url, :share_url, :res_count, SYSDATE)",
+            db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
+                               ":collection_id, :title, :description, :url, :share_url, :res_count, SYSDATE)",
                                city_id=city_id,
                                collection_id=response['collections'][collection]['collection']['collection_id'],
                                title=response['collections'][collection]['collection']['title'],
@@ -261,7 +266,8 @@ class ZomatoClient:
                   + ' ' + str(response['nightlife_res'])
                   + ' ' + str(response['num_restaurant']))
         db_cur_one.execute("insert into ZMT_LOCATIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :entity_id, :popularity, "
-                           ":nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, :num_restaurant, SYSDATE)",
+                           ":nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, :num_restaurant, "
+                           "SYSDATE)",
                            entity_id=entity_id,
                            popularity=response['popularity'],
                            nightlife_index=response['nightlife_index'],
@@ -285,8 +291,9 @@ class ZomatoClient:
 
         # Due to API restriction, request restricted to <= 20 records
         while results_start < results_end:
-            response = requests.get(base_url + '/search?' + search_parameters + '&start=' + str(results_start) + '&count='
-                                    + str(results_shown) + '&sort=rating&order=desc', params='', headers=headers).json()
+            response = requests.get(base_url + '/search?' + search_parameters + '&start=' + str(results_start) +
+                                    '&count=' + str(results_shown) + '&sort=rating&order=desc', params='',
+                                    headers=headers).json()
 
             # results_found = response['results_found']
             results_start = response['results_start']
@@ -307,7 +314,8 @@ class ZomatoClient:
                           + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['longitude'])
                           + ' ' + response['restaurants'][restaurant]['restaurant']['cuisines']
                           + ' ' + str(response['restaurants'][restaurant]['restaurant']['average_cost_for_two'])
-                          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']['aggregate_rating'])
+                          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']
+                                      ['aggregate_rating'])
                           + ' ' + response['restaurants'][restaurant]['restaurant']['user_rating']['rating_text']
                           + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']['votes'])
                           + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_online_delivery'])
@@ -321,18 +329,20 @@ class ZomatoClient:
                         log.info("Adding Restaurant: " + response['restaurants'][restaurant]['restaurant']['name']
                                  + ', ' + response['restaurants'][restaurant]['restaurant']['location']['locality'])
 
-                        db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
-                                           ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",
+                        db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, "
+                                           ":url, :locality, :city_id, :latitude, :longitude, :search_parameters, "
+                                           "SYSDATE)",
                                            restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
                                            restaurant_name=response['restaurants'][restaurant]['restaurant']['name'],
                                            url=response['restaurants'][restaurant]['restaurant']['url'],
-                                           locality=response['restaurants'][restaurant]['restaurant']['location'][
-                                               'locality'],
-                                           city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
-                                           latitude=response['restaurants'][restaurant]['restaurant']['location'][
-                                               'latitude'],
-                                           longitude=response['restaurants'][restaurant]['restaurant']['location'][
-                                               'longitude'],
+                                           locality=response['restaurants'][restaurant]['restaurant']['location']
+                                           ['locality'],
+                                           city_id=response['restaurants'][restaurant]['restaurant']['location']
+                                           ['city_id'],
+                                           latitude=response['restaurants'][restaurant]['restaurant']['location']
+                                           ['latitude'],
+                                           longitude=response['restaurants'][restaurant]['restaurant']['location']
+                                           ['longitude'],
                                            search_parameters=search_parameters)
 
                 # Cleanup current month's data, if any
@@ -342,22 +352,24 @@ class ZomatoClient:
                                    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
 
                 # Populate table
-                db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :restaurant_id, "
-                                   ":cuisines, :average_cost_for_two, :user_rating_aggregate, :user_rating_text, "
-                                   ":user_rating_votes, :has_online_delivery, :has_table_booking, SYSDATE)",
+                db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), "
+                                   ":restaurant_id, :cuisines, :average_cost_for_two, :user_rating_aggregate, "
+                                   ":user_rating_text, :user_rating_votes, :has_online_delivery, :has_table_booking, "
+                                   "SYSDATE)",
                                    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
                                    cuisines=response['restaurants'][restaurant]['restaurant']['cuisines'],
                                    average_cost_for_two=response['restaurants'][restaurant]['restaurant']
                                    ['average_cost_for_two'],
-                                   user_rating_aggregate=response['restaurants'][restaurant]['restaurant']['user_rating']
-                                   ['aggregate_rating'],
+                                   user_rating_aggregate=response['restaurants'][restaurant]['restaurant']
+                                   ['user_rating']['aggregate_rating'],
                                    user_rating_text=response['restaurants'][restaurant]['restaurant']['user_rating']
                                    ['rating_text'],
-                                   user_rating_votes=response['restaurants'][restaurant]['restaurant']['user_rating'][
-                                       'votes'],
-                                   has_online_delivery=response['restaurants'][restaurant]['restaurant'][
-                                       'has_online_delivery'],
-                                   has_table_booking=response['restaurants'][restaurant]['restaurant']['has_table_booking'])
+                                   user_rating_votes=response['restaurants'][restaurant]['restaurant']['user_rating']
+                                   ['votes'],
+                                   has_online_delivery=response['restaurants'][restaurant]['restaurant']
+                                   ['has_online_delivery'],
+                                   has_table_booking=response['restaurants'][restaurant]['restaurant']
+                                   ['has_table_booking'])
             results_start = results_start + 20
 
             # Determine request limit
@@ -376,7 +388,8 @@ class ZomatoClient:
         db_cur_one.execute("delete from ZMT_COLLECTIONS_EXT where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
 
         # Loop through Collection list
-        db_cur_two.execute("select distinct CITY_ID, COLLECTION_ID from ZMT_COLLECTIONS order by CITY_ID, COLLECTION_ID")
+        db_cur_two.execute("select distinct CITY_ID, COLLECTION_ID from ZMT_COLLECTIONS order by CITY_ID, "
+                           "COLLECTION_ID")
         for values in db_cur_two:
             collection_id = values[1]
             search_parameters = ('collection_id=' + str(collection_id) + '&q=' + query)
@@ -476,79 +489,3 @@ class ZomatoClient:
 
         log.info("get_restaurant_bycollection() | <END>")
         return 0
-
-'''
-if __name__ == '__main__':
-    fmt_string = "%(asctime)s | %(levelname)s | %(module)s | %(message)s"
-    fmtr = logging.Formatter(fmt=fmt_string)
-    sh = logging.StreamHandler()
-    sh.setFormatter(fmtr)
-    my_lib_logger = logging.getLogger("mylibrary")
-    my_lib_logger.addHandler(sh)
-    my_lib_logger.setLevel("DEBUG")
-
-    zom = ZomatoClient()
-
-    #main(zom)
-
-    # Initialize variables
-    headers = {'Accept': 'application/json', 'user-key': get_user_key()}
-    debug_mode = 'N'
-    city = ''
-    localities = []
-
-    #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
-    log.info("main() | <START>")
-    log.debug("main() | <START>")
-
-    # Retrieve Parameter | City Names
-    db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-    for count in db_cur_one:
-        if count[0] is 0:
-            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: CITY_NAME missing. Please define. ")
-        else:
-            db_cur_two.execute("select distinct CITY_NAME from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-            for city_name in db_cur_two:
-                city = city_name[0]
-
-    # Retrieve Parameter | Localities
-    db_cur_one.execute("select count(distinct LOCALITY) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-    for count in db_cur_one:
-        if count[0] is 0:
-            print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Parameter: LOCALITY missing. Please define. ")
-        else:
-            db_cur_two.execute("select distinct LOCALITY from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
-            for locality in db_cur_two:
-                localities.append(locality[0])
-
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER City: " + city)
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Localities: " + str(localities))
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] PARAMETER Debug Mode: " + debug_mode)
-
-    # Fetch Category data
-    zom.get_categories(headers)
-
-    # Fetch City data
-    city_id = zom.get_cities(headers, city)
-    zom.get_cuisines(headers, city_id)
-    zom.get_establishments(headers, city_id)
-
-    # Fetch Location/Restaurant data
-    for locality in range(len(localities)):
-        print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
-        entity = zom.get_locations(headers, localities[locality])
-        zom.get_location_details(headers, entity[0], entity[1], debug_mode)
-        zom.get_search_bylocation(headers, localities[locality], entity[0], entity[1], debug_mode)
-
-    # Fetch Collection/Restaurant data
-    zom.get_collections(headers, city_id)
-    zom.get_search_bycollection(headers, city, debug_mode)
-    zom.get_restaurant_bycollection(headers, debug_mode)
-
-    # Close Oracle Connections
-    db_cur_one.close()
-    db_cur_two.close()
-    db_conn.close()
-
-    print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <END>")
-'''
