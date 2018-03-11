@@ -4,21 +4,17 @@
 
 import json
 import cx_Oracle
+import logging
 #import _mysql
 import MySQLdb
 import os
 from time import gmtime, strftime
 
 base_dir = 'e:\\GitHub\\python\\keys\\'
+log = logging.getLogger(__name__)
 
 
-class NXKey:
-
-    def key_twitter(self):
-        # Open KEY files
-        with open(base_dir + 'twitter.key') as key_file:
-            key = json.load(key_file)
-        return key
+class APIKey:
 
     def key_zomato(self):
         # Open KEY files
@@ -26,20 +22,8 @@ class NXKey:
             key = json.load(key_file)
         return key
 
-    def key_instagram(self):
-        # Open KEY files
-        with open(base_dir + 'instagram.key') as key_file:
-            key = json.load(key_file)
-        return key
 
-    def key_facebook(self):
-        # Open KEY files
-        with open(base_dir + 'facebook.key') as key_file:
-            key = json.load(key_file)
-        return key
-
-
-class NXOracle:
+class DBOracle:
 
     def db_dos_start(self):
         os.system("C:\Windows\SysWOW64\cmd.exe  /k C:\oraclexe\app\oracle\product\11.2.0\server\bin\StartDB.bat")
@@ -83,7 +67,9 @@ class NXOracle:
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Shutdown Completed")
 
     def db_login(self):
-        print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Logon Initiated")
+        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Logon Initiated")
+        log.info("[Oracle DB] Logon Initiated")
+
 
         with open(base_dir + 'oracle.key') as key_file_oracle:
             key_oracle = json.load(key_file_oracle)
@@ -92,11 +78,12 @@ class NXOracle:
                                        key_oracle[0]['PASSWORD'],
                                        key_oracle[0]['CONNECT_STRING'])
 
-        print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Logon Completed")
+        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Logon Completed")
+        log.info("[Oracle DB] Logon Completed")
         return connection
 
 
-class NXmysql:
+class DBMySQL:
 
     def db_dos_start(self):
         os.system("C:\Windows\SysWOW64\cmd.exe  /k C:\oraclexe\app\oracle\product\11.2.0\server\bin\StartDB.bat")
@@ -140,7 +127,8 @@ class NXmysql:
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [Oracle DB] Shutdown Completed")
 
     def db_login(self):
-        print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [MySQL DB] Logon Initiated")
+        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [MySQL DB] Logon Initiated")
+        log.info("[Oracle DB] Logon Initiated")
 
         with open(base_dir + 'mysql_aws.key') as key_file_mysql:
             key_mysql = json.load(key_file_mysql)
@@ -150,5 +138,6 @@ class NXmysql:
                                     key_mysql[0]['PASSWORD'],
                                     db='mysqldb')
 
-        print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [MySQL DB] Logon Completed")
+        #print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [MySQL DB] Logon Completed")
+        log.info("[Oracle DB] Logon Completed")
         return connection

@@ -14,21 +14,20 @@ import logging
 import requests
 import json
 from mylibrary.nxcommon import NXKey
-from mylibrary.nxcommon import NXOracle
-from mylibrary.http import BaseHTTPClient
+#from mylibrary.http import BaseHTTPClient
 from mylibrary.zomato import SuperiorZomatoClient
 from time import gmtime, strftime
-
-
-# Define Oracle Variables
-db_conn = NXOracle().db_login()
-db_cur_one = db_conn.cursor()
-db_cur_two = db_conn.cursor()
 
 
 def get_user_key():
     """Get the Zomato API Key"""
     return NXKey().key_zomato()[0]['API_KEY']
+
+'''
+# Define Oracle Variables
+db_conn = NXOracle().db_login()
+db_cur_one = db_conn.cursor()
+db_cur_two = db_conn.cursor()
 
 
 def main():
@@ -96,8 +95,8 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 '''
+
 if __name__ == "__main__":
 
     # ------- OLD CODE
@@ -140,6 +139,6 @@ if __name__ == "__main__":
     #    getLogger("mylibrary.<something>") and setLevel(to-some-other-level)
     my_lib_logger.setLevel("DEBUG")
 
-    zom = SuperiorZomatoClient("96de02583dbb02fae87e834846ee7ee5")
-    cat = zom.get_categories()
-'''
+    zom = SuperiorZomatoClient(get_user_key())
+    #cat = zom.get_categories()
+    city_id = zom.get_cities("Bangalore")
