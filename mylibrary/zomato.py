@@ -2,7 +2,7 @@
 
 """Zomato Client
 Library that:
- 1. From RDBMS, retrieves parameters that restrict data fetched from Zomato.com
+ 1. From database, retrieves parameters that restrict data fetched from Zomato.com
  2. Fetches data from Zomato.com via Zomato's public APIs
  3. Populates the data into the Zomato datamart
 
@@ -256,8 +256,16 @@ class ZomatoClient:
                            "ENTITY_ID = :entity_id", entity_id=entity_id)
 
         # Populate table
-        if debug_mode is 'Y':
-            print(str(response['location']['entity_id'])
+        #if debug_mode is 'Y':
+        #    print(str(response['location']['entity_id'])
+        #          + ' ' + response['location']['entity_type']
+        #          + ' ' + str(response['popularity'])
+        #          + ' ' + str(response['nightlife_index'])
+        #          + ' ' + str(response['top_cuisines'])
+        #          + ' ' + str(response['popularity_res'])
+        #          + ' ' + str(response['nightlife_res'])
+        #          + ' ' + str(response['num_restaurant']))
+        log.debug(str(response['location']['entity_id'])
                   + ' ' + response['location']['entity_type']
                   + ' ' + str(response['popularity'])
                   + ' ' + str(response['nightlife_index'])
@@ -265,6 +273,7 @@ class ZomatoClient:
                   + ' ' + str(response['popularity_res'])
                   + ' ' + str(response['nightlife_res'])
                   + ' ' + str(response['num_restaurant']))
+
         db_cur_one.execute("insert into ZMT_LOCATIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :entity_id, :popularity, "
                            ":nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, :num_restaurant, "
                            "SYSDATE)",
@@ -298,14 +307,29 @@ class ZomatoClient:
             # results_found = response['results_found']
             results_start = response['results_start']
             results_shown = response['results_shown']
-            if debug_mode is 'Y':
-                print("Results Start:" + str(results_start))
-                print("Results Shown:" + str(results_shown))
+
+            log.debug("Results Start:" + str(results_start))
+            log.debug("Results Shown:" + str(results_shown))
 
             # Loop through response and populate table
             for restaurant in range(len(response['restaurants'])):
-                if debug_mode is 'Y':
-                    print(str(response['restaurants'][restaurant]['restaurant']['id'])
+                #if debug_mode is 'Y':
+                #    print(str(response['restaurants'][restaurant]['restaurant']['id'])
+                #          + ' ' + response['restaurants'][restaurant]['restaurant']['name']
+                #          + ' ' + response['restaurants'][restaurant]['restaurant']['url']
+                #          + ' ' + response['restaurants'][restaurant]['restaurant']['location']['locality']
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['latitude'])
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['longitude'])
+                #          + ' ' + response['restaurants'][restaurant]['restaurant']['cuisines']
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['average_cost_for_two'])
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']
+                #                      ['aggregate_rating'])
+                #          + ' ' + response['restaurants'][restaurant]['restaurant']['user_rating']['rating_text']
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']['votes'])
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_online_delivery'])
+                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_table_booking']))
+                log.debug(str(response['restaurants'][restaurant]['restaurant']['id'])
                           + ' ' + response['restaurants'][restaurant]['restaurant']['name']
                           + ' ' + response['restaurants'][restaurant]['restaurant']['url']
                           + ' ' + response['restaurants'][restaurant]['restaurant']['location']['locality']
@@ -406,16 +430,20 @@ class ZomatoClient:
                 # results_found = response['results_found']
                 results_start = response['results_start']
                 results_shown = response['results_shown']
-                if debug_mode is 'Y':
-                    print("Results Start:" + str(results_start))
-                    print("Results Shown:" + str(results_shown))
+
+                log.debug("Results Start:" + str(results_start))
+                log.debug("Results Shown:" + str(results_shown))
 
                 # Loop through response and populate table
                 for restaurant in range(len(response['restaurants'])):
-                    if debug_mode is 'Y':
-                        print(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
+                    #if debug_mode is 'Y':
+                    #    print(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
+                    #          + ' ' + str(collection_id)
+                    #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
+                    log.debug(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
                               + ' ' + str(collection_id)
                               + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
+
                     db_cur_one.execute("insert into ZMT_COLLECTIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
                                        ":collection_id, :restaurant_id, :search_parameters, SYSDATE)",
                                        city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
@@ -448,8 +476,22 @@ class ZomatoClient:
             search_parameters = ('res_id=' + str(res_id))
             response = requests.get(base_url + '/restaurant?' + search_parameters, params='', headers=headers).json()
 
-            if debug_mode is 'Y':
-                print(str(response['id'])
+            #if debug_mode is 'Y':
+            #    print(str(response['id'])
+            #          + ' ' + response['name']
+            #          + ' ' + response['url']
+            #          + ' ' + response['location']['locality']
+            #          + ' ' + str(response['location']['city_id'])
+            #          + ' ' + str(response['location']['latitude'])
+            #          + ' ' + str(response['location']['longitude'])
+            #          + ' ' + response['cuisines']
+            #          + ' ' + str(response['average_cost_for_two'])
+            #          + ' ' + str(response['user_rating']['aggregate_rating'])
+            #          + ' ' + response['user_rating']['rating_text']
+            #          + ' ' + str(response['user_rating']['votes'])
+            #          + ' ' + str(response['has_online_delivery'])
+            #          + ' ' + str(response['has_table_booking']))
+            log.debug(str(response['id'])
                       + ' ' + response['name']
                       + ' ' + response['url']
                       + ' ' + response['location']['locality']
@@ -463,6 +505,7 @@ class ZomatoClient:
                       + ' ' + str(response['user_rating']['votes'])
                       + ' ' + str(response['has_online_delivery'])
                       + ' ' + str(response['has_table_booking']))
+
             log.info("Adding Restaurant: " + response['name'] + ', ' + response['location']['locality'])
             db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
                                ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",
