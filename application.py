@@ -23,7 +23,6 @@ if __name__ == '__main__':
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <START>")
 
     # Initialize variables
-    debug_mode = 'N'
     city = ''
     localities = []
 
@@ -63,12 +62,12 @@ if __name__ == '__main__':
     for locality in range(len(localities)):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
         entity = ZmtClient.get_locations(headers, localities[locality])
-        ZmtClient.get_location_details(headers, entity[0], entity[1], debug_mode)
-        ZmtClient.get_search_bylocation(headers, localities[locality], entity[0], entity[1], debug_mode)
+        ZmtClient.get_location_details(headers, entity[0], entity[1])
+        ZmtClient.get_search_bylocation(headers, localities[locality], entity[0], entity[1])
 
     # Fetch Collection/Restaurant data
     ZmtClient.get_collections(headers, city_id)
-    ZmtClient.get_search_bycollection(headers, city, debug_mode)
-    ZmtClient.get_restaurant_bycollection(headers, debug_mode)
+    ZmtClient.get_search_bycollection(headers, city)
+    ZmtClient.get_restaurant_bycollection(headers)
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <END>")

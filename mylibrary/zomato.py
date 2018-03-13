@@ -245,7 +245,7 @@ class ZomatoClient:
 
         return str(response['location_suggestions'][0]['entity_id']), response['location_suggestions'][0]['entity_type']
 
-    def get_location_details(self, headers, entity_id, entity_type, debug_mode):
+    def get_location_details(self, headers, entity_id, entity_type):
         """Refresh Zomato Location Details data"""
         log.info("get_locations_details() | <START>")
 
@@ -256,15 +256,6 @@ class ZomatoClient:
                            "ENTITY_ID = :entity_id", entity_id=entity_id)
 
         # Populate table
-        #if debug_mode is 'Y':
-        #    print(str(response['location']['entity_id'])
-        #          + ' ' + response['location']['entity_type']
-        #          + ' ' + str(response['popularity'])
-        #          + ' ' + str(response['nightlife_index'])
-        #          + ' ' + str(response['top_cuisines'])
-        #          + ' ' + str(response['popularity_res'])
-        #          + ' ' + str(response['nightlife_res'])
-        #          + ' ' + str(response['num_restaurant']))
         log.debug(str(response['location']['entity_id'])
                   + ' ' + response['location']['entity_type']
                   + ' ' + str(response['popularity'])
@@ -289,7 +280,7 @@ class ZomatoClient:
         log.info("get_locations_details() | <END>")
         return 0
 
-    def get_search_bylocation(self, headers, query, entity_id, entity_type, debug_mode):
+    def get_search_bylocation(self, headers, query, entity_id, entity_type):
         """Search Zomato Restaurants by Location"""
         log.info("get_search_bylocation() | <START>")
 
@@ -313,22 +304,6 @@ class ZomatoClient:
 
             # Loop through response and populate table
             for restaurant in range(len(response['restaurants'])):
-                #if debug_mode is 'Y':
-                #    print(str(response['restaurants'][restaurant]['restaurant']['id'])
-                #          + ' ' + response['restaurants'][restaurant]['restaurant']['name']
-                #          + ' ' + response['restaurants'][restaurant]['restaurant']['url']
-                #          + ' ' + response['restaurants'][restaurant]['restaurant']['location']['locality']
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['latitude'])
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['location']['longitude'])
-                #          + ' ' + response['restaurants'][restaurant]['restaurant']['cuisines']
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['average_cost_for_two'])
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']
-                #                      ['aggregate_rating'])
-                #          + ' ' + response['restaurants'][restaurant]['restaurant']['user_rating']['rating_text']
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['user_rating']['votes'])
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_online_delivery'])
-                #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['has_table_booking']))
                 log.debug(str(response['restaurants'][restaurant]['restaurant']['id'])
                           + ' ' + response['restaurants'][restaurant]['restaurant']['name']
                           + ' ' + response['restaurants'][restaurant]['restaurant']['url']
@@ -404,7 +379,7 @@ class ZomatoClient:
         log.info("get_search_bylocation() | <END>")
         return 0
 
-    def get_search_bycollection(self, headers, query, debug_mode):
+    def get_search_bycollection(self, headers, query):
         """Search Zomato Restaurants by Collections"""
         log.info("get_search_bycollection() | <START>")
 
@@ -436,10 +411,6 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for restaurant in range(len(response['restaurants'])):
-                    #if debug_mode is 'Y':
-                    #    print(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
-                    #          + ' ' + str(collection_id)
-                    #          + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
                     log.debug(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
                               + ' ' + str(collection_id)
                               + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
@@ -460,7 +431,7 @@ class ZomatoClient:
         log.info("get_search_bycollection() | <END>")
         return 0
 
-    def get_restaurant_bycollection(self, headers, debug_mode):
+    def get_restaurant_bycollection(self, headers):
         """Retrieve Zomato Restaurants data for Collections"""
         log.info("get_restaurant_bycollection() | <START>")
 
@@ -476,21 +447,6 @@ class ZomatoClient:
             search_parameters = ('res_id=' + str(res_id))
             response = requests.get(base_url + '/restaurant?' + search_parameters, params='', headers=headers).json()
 
-            #if debug_mode is 'Y':
-            #    print(str(response['id'])
-            #          + ' ' + response['name']
-            #          + ' ' + response['url']
-            #          + ' ' + response['location']['locality']
-            #          + ' ' + str(response['location']['city_id'])
-            #          + ' ' + str(response['location']['latitude'])
-            #          + ' ' + str(response['location']['longitude'])
-            #          + ' ' + response['cuisines']
-            #          + ' ' + str(response['average_cost_for_two'])
-            #          + ' ' + str(response['user_rating']['aggregate_rating'])
-            #          + ' ' + response['user_rating']['rating_text']
-            #          + ' ' + str(response['user_rating']['votes'])
-            #          + ' ' + str(response['has_online_delivery'])
-            #          + ' ' + str(response['has_table_booking']))
             log.debug(str(response['id'])
                       + ' ' + response['name']
                       + ' ' + response['url']
