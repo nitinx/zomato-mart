@@ -10,11 +10,11 @@ log = logging.getLogger(__name__)
 
 class APIKey:
 
-    def key_zomato(self):
+    def retrieve_key(self, category):
         log.info("[API Key] Retrieval Initiated")
 
         # Open KEY files
-        with open(base_dir + 'zomato.key') as key_file:
+        with open(base_dir + category + '.key') as key_file:
             key = json.load(key_file)
 
         log.debug("[API Key] " + str(key) + " >")

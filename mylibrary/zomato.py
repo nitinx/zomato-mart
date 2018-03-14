@@ -488,3 +488,55 @@ class ZomatoClient:
 
         log.info("get_restaurant_bycollection() | <END>")
         return 0
+
+
+class ZomatoAlerts:
+
+    alert_header = 'LOCALITY | RESTAURANT_NAME | USER_RATING | COST_FOR_TWO | CUISINES | URL \n'
+    alert_body = ""
+
+    def compose_alert(self):
+        """Compose Alert"""
+        log.info("compose_alert() | <START>")
+        alert_body = ""
+
+        # Retrieve Parameter | City Names
+        db_cur_one.execute("select ZR.LOC_LOCALITY, ZR.RESTAURANT_NAME, ZR_EXT.USER_RATING_AGGREGATE, "
+                           "       ZR_EXT.AVERAGE_COST_FOR_TWO, ZR_EXT.CUISINES, ZR.URL"
+                           "  from ZMT_RESTAURANTS ZR, ZMT_RESTAURANTS_EXT ZR_EXT"
+                           " where ZR.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID"
+                           "   and TO_CHAR(ZR.INSERT_DT, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')"
+                           "   and ZR_EXT.PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
+        for values in db_cur_one:
+            res_locality = values[0]
+            res_name = values[1]
+            res_user_rating = values[2]
+            res_cost_for_two = values[3]
+            res_cuisines = values[4]
+            res_url = values[5]
+            #alert_body.append(res_locality + ' | ' + res_name + ' | ' + res_user_rating + ' | ' + \
+            #             res_cost_for_two + ' | ' + res_cuisines + ' | ' + res_url + '\n')
+            alert_body += res_locality + ' | ' + res_name + ' | ' + str(res_user_rating) + ' | ' + \
+                         str(res_cost_for_two) + ' | ' + res_cuisines + ' | ' + "res_url" + '\n'
+
+        log.info("compose_alert() | <END>")
+        return alert_body
+
+    def send_alert(self, api_key, alert_body):
+        """Send Alert"""
+        log.info("send_alert() | <START>")
+
+        alert_header = "LOCALITY | RESTAURANT_NAME | USER_RATING | COST_FOR_TWO | CUISINES | URL \n"
+
+        return requests.post(
+            "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
+            #auth=("api", "key-f8862e37e74200e025f2217cc07904f9"),
+            auth=("api", api_key),
+            data={"from": "Mailgun Sandbox <postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
+                  "to": "Nitin Pai <pai.nitin+mailgun@gmail.com>",
+                  "subject": "Zomato Alert | New Restaurants",
+                  #"text": "Congratulations Nitin Pai, you just sent an email with Mailgun!  You are truly awesome!"})
+                  "text": alert_header + alert_body})
+
+        log.info("send_alert() | <END>")
+        return 0

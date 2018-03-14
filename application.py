@@ -14,6 +14,7 @@ import logging
 from mylibrary.apikey import APIKey
 from mylibrary.zomato import ZomatoParameters
 from mylibrary.zomato import ZomatoClient
+from mylibrary.zomato import ZomatoAlerts
 from time import gmtime, strftime
 
 log = logging.getLogger(__name__)
@@ -39,15 +40,20 @@ if __name__ == '__main__':
 
     # Initialize Zomato API Key Objects
     ZomatoAPIKey = APIKey()
-    api_key = ZomatoAPIKey.key_zomato()[0]['API_KEY']
-    headers = {'Accept': 'application/json', 'user-key': api_key}
+    api_key_zomato = ZomatoAPIKey.retrieve_key("zomato")[0]['API_KEY']
+    headers = {'Accept': 'application/json', 'user-key': api_key_zomato}
+
+    # Initialize Mailgun API Key Objects
+    MailgunAPIKey = APIKey()
+    api_key_mailgun = MailgunAPIKey.retrieve_key("mailgun")[0]['API_KEY']
 
     # Initialize Zomato Objects
     ZmtParams = ZomatoParameters()
     ZmtClient = ZomatoClient()
+    ZmtAlert = ZomatoAlerts()
 
     # Retrieve Parameters
-    city = ZmtParams.getparam_city_names()
+    '''city = ZmtParams.getparam_city_names()
     localities = ZmtParams.getparam_localities()
 
     # Fetch Category data
@@ -68,6 +74,9 @@ if __name__ == '__main__':
     # Fetch Collection/Restaurant data
     ZmtClient.get_collections(headers, city_id)
     ZmtClient.get_search_bycollection(headers, city)
-    ZmtClient.get_restaurant_bycollection(headers)
+    ZmtClient.get_restaurant_bycollection(headers)'''
+
+    #ZmtAlert.compose_alert()
+    ZmtAlert.send_alert(api_key_mailgun, ZmtAlert.compose_alert())
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <END>")
