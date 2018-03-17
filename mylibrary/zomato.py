@@ -492,12 +492,9 @@ class ZomatoClient:
 
 class ZomatoAlerts:
 
-    alert_header = 'LOCALITY | RESTAURANT_NAME | USER_RATING | COST_FOR_TWO | CUISINES | URL \n'
-    alert_body = ""
-
-    def compose_alert(self):
+    def compose_alert(self, locality):
         """Compose Alert"""
-        log.info("compose_alert() | <START>")
+        log.info("compose_alert() " + locality + " | <START>")
         alert_body = ""
 
         # Retrieve Parameter | City Names
@@ -506,7 +503,8 @@ class ZomatoAlerts:
                            "  from ZMT_RESTAURANTS ZR, ZMT_RESTAURANTS_EXT ZR_EXT"
                            " where ZR.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID"
                            "   and TO_CHAR(ZR.INSERT_DT, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')"
-                           "   and ZR_EXT.PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
+                           "   and ZR_EXT.PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')"
+                           "   and ZR.LOC_LOCALITY like :locality", locality=locality)
         for values in db_cur_one:
             res_locality = values[0]
             res_name = values[1]
@@ -514,29 +512,44 @@ class ZomatoAlerts:
             res_cost_for_two = values[3]
             res_cuisines = values[4]
             res_url = values[5]
-            #alert_body.append(res_locality + ' | ' + res_name + ' | ' + res_user_rating + ' | ' + \
-            #             res_cost_for_two + ' | ' + res_cuisines + ' | ' + res_url + '\n')
-            alert_body += res_locality + ' | ' + res_name + ' | ' + str(res_user_rating) + ' | ' + \
-                         str(res_cost_for_two) + ' | ' + res_cuisines + ' | ' + "res_url" + '\n'
+            alert_body += '<tr>' \
+                          + '<td>' + res_locality + '</td>' \
+                          + '<td>' + '<a href=' + res_url + '>' + res_name + '</a>' + '</td>' \
+                          + '<td>' + str(res_user_rating) + '</td>' \
+                          + '<td>' + str(res_cost_for_two) + '</td>' \
+                          + '<td>' + res_cuisines + '</td>' \
+                          + '</tr>'
 
-        log.info("compose_alert() | <END>")
+        alert_body += '</table></body>'
+
+        log.info("compose_alert() " + locality + " | <END>")
         return alert_body
 
-    def send_alert(self, api_key, alert_body):
+    def send_alert(self, api_key, alert_body, locality):
         """Send Alert"""
-        log.info("send_alert() | <START>")
+        log.info("send_alert() " + locality + " | <START>")
 
-        alert_header = "LOCALITY | RESTAURANT_NAME | USER_RATING | COST_FOR_TWO | CUISINES | URL \n"
+        alert_header = "<head><style>" \
+                       "table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%; } " \
+                       "td, th {border: 1px solid #dddddd; text-align:  left; padding: 8px; } " \
+                       "tr:nth-child(even) {background-color: #dddddd; } " \
+                       "</style></head>" \
+                       "<body><table style='width:100%'><tr>" \
+                       "<th>Locality</th>" \
+                       "<th>Restaurant Name</th>" \
+                       "<th>Rating</th>" \
+                       "<th>Cost For Two</th>" \
+                       "<th>Cuisines</th></tr>"
 
-        return requests.post(
+        requests.post(
             "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
-            #auth=("api", "key-f8862e37e74200e025f2217cc07904f9"),
             auth=("api", api_key),
             data={"from": "Mailgun Sandbox <postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
                   "to": "Nitin Pai <pai.nitin+mailgun@gmail.com>",
                   "subject": "Zomato Alert | New Restaurants",
-                  #"text": "Congratulations Nitin Pai, you just sent an email with Mailgun!  You are truly awesome!"})
-                  "text": alert_header + alert_body})
+                  "subject": "Zomato Alert | " + locality,
+                  "html": alert_header + alert_body})
 
-        log.info("send_alert() | <END>")
+        log.info("send_alert() " + locality + " | <END>")
+
         return 0
