@@ -57,7 +57,7 @@ if __name__ == '__main__':
     localities = ZmtParams.getparam_localities()
 
     # Fetch Category data
-    '''ZmtClient.get_categories(headers)
+    ZmtClient.get_categories(headers)
 
     # Fetch City data
     city_id = ZmtClient.get_cities(headers, city)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # Fetch Collection/Restaurant data
     ZmtClient.get_collections(headers, city_id)
     ZmtClient.get_search_bycollection(headers, city)
-    ZmtClient.get_restaurant_bycollection(headers)'''
+    ZmtClient.get_restaurant_bycollection(headers)
 
     # Fetch Location/Restaurant data
     for locality in range(len(localities)):

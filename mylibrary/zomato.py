@@ -31,7 +31,7 @@ class ZomatoParameters:
 
     def getparam_city_names(self):
         """Retrieve Parameter | City Names"""
-        log.info("getparam_city_names() | <START>")
+        log.debug("getparam_city_names() | <START>")
         city = ''
 
         # Retrieve Parameter | City Names
@@ -45,12 +45,12 @@ class ZomatoParameters:
                     city = city_name[0]
 
         log.info("PARAMETER City: " + city)
-        log.info("getparam_city_names() | <END>")
+        log.debug("getparam_city_names() | <END>")
         return city
 
     def getparam_localities(self):
         """Retrieve Parameter | Localities"""
-        log.info("getparam_localities() | <START>")
+        log.debug("getparam_localities() | <START>")
         localities = []
 
         # Retrieve Parameter | Localities
@@ -65,7 +65,7 @@ class ZomatoParameters:
                     localities.append(locality[0])
 
         log.info("PARAMETER Locality: " + str(localities))
-        log.info("getparam_localities() | <END>")
+        log.debug("getparam_localities() | <END>")
         return localities
 
 
@@ -494,7 +494,7 @@ class ZomatoAlerts:
 
     def compose_alert(self, locality):
         """Compose Alert"""
-        log.info("compose_alert() " + locality + " | <START>")
+        log.debug("compose_alert() " + locality + " | <START>")
         alert_body = ""
 
         # Retrieve Parameter | City Names
@@ -522,34 +522,38 @@ class ZomatoAlerts:
 
         alert_body += '</table></body>'
 
-        log.info("compose_alert() " + locality + " | <END>")
+        log.debug("compose_alert() " + locality + " | <END>")
         return alert_body
 
     def send_alert(self, api_key, alert_body, locality):
         """Send Alert"""
-        log.info("send_alert() " + locality + " | <START>")
+        log.debug("send_alert() " + locality + " | <START>")
 
-        alert_header = "<head><style>" \
-                       "table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%; } " \
-                       "td, th {border: 1px solid #dddddd; text-align:  left; padding: 8px; } " \
-                       "tr:nth-child(even) {background-color: #dddddd; } " \
-                       "</style></head>" \
-                       "<body><table style='width:100%'><tr>" \
-                       "<th>Locality</th>" \
-                       "<th>Restaurant Name</th>" \
-                       "<th>Rating</th>" \
-                       "<th>Cost For Two</th>" \
-                       "<th>Cuisines</th></tr>"
+        alert_header = "<head>" \
+                       "  <style>" \
+                       "    table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%; } " \
+                       "    td, th {border: 1px solid #dddddd; text-align:  left; padding: 8px; } " \
+                       "    tr:nth-child(even) {background-color: #dddddd; } " \
+                       "  </style>" \
+                       "</head>" \
+                       "<body>" \
+                       "  <table style='width:100%'>" \
+                       "    <tr>" \
+                       "      <th>Locality</th>" \
+                       "      <th>Restaurant Name</th>" \
+                       "      <th>Rating</th>" \
+                       "      <th>Cost For Two</th>" \
+                       "      <th>Cuisines</th>" \
+                       "    </tr>"
 
         requests.post(
             "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
             auth=("api", api_key),
             data={"from": "Mailgun Sandbox <postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
                   "to": "Nitin Pai <pai.nitin+mailgun@gmail.com>",
-                  "subject": "Zomato Alert | New Restaurants",
                   "subject": "Zomato Alert | " + locality,
                   "html": alert_header + alert_body})
 
-        log.info("send_alert() " + locality + " | <END>")
+        log.debug("send_alert() " + locality + " | <END>")
 
         return 0

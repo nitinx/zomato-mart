@@ -11,12 +11,12 @@ log = logging.getLogger(__name__)
 class APIKey:
 
     def retrieve_key(self, category):
-        log.info("[API Key] " + category + " | Retrieval Initiated")
+        log.debug("[API Key] " + category + " | Retrieval Initiated")
 
         # Open KEY files
         with open(base_dir + category + '.key') as key_file:
             key = json.load(key_file)
 
         log.debug("[API Key] " + str(key) + " >")
-        log.info("[API Key] " + category + " | Retrieval Completed")
+        log.debug("[API Key] " + category + " | Retrieval Completed")
         return key
