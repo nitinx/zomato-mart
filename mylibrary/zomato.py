@@ -38,13 +38,13 @@ class ZomatoParameters:
         db_cur_one.execute("select count(distinct CITY_NAME) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
         for count in db_cur_one:
             if count[0] is 0:
-                log.info("Parameter: CITY_NAME missing. Please define.")
+                log.info("getparam_city_names() | Parameter: CITY_NAME missing. Please define.")
             else:
                 db_cur_two.execute("select distinct CITY_NAME from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
                 for city_name in db_cur_two:
                     city = city_name[0]
 
-        log.info("PARAMETER City: " + city)
+        log.info("getparam_city_names() | PARAMETER City: " + city)
         log.debug("getparam_city_names() | <END>")
         return city
 
@@ -57,14 +57,14 @@ class ZomatoParameters:
         db_cur_one.execute("select count(distinct LOCALITY) from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
         for count in db_cur_one:
             if count[0] is 0:
-                log.info("Parameter: LOCALITY missing. Please define.")
+                log.info("getparam_localities() | Parameter: LOCALITY missing. Please define.")
 
             else:
                 db_cur_two.execute("select distinct LOCALITY from ZMT_PARAMETERS where ACTIVE_FLAG = 'Y'")
                 for locality in db_cur_two:
                     localities.append(locality[0])
 
-        log.info("PARAMETER Locality: " + str(localities))
+        log.info("getparam_localities() | PARAMETER Locality: " + str(localities))
         log.debug("getparam_localities() | <END>")
         return localities
 
@@ -73,14 +73,14 @@ class ZomatoClient:
 
     def get_categories(self, headers):
         """Refresh Zomato Categories data"""
-        log.info("get_categories() | <START>")
+        log.debug("get_categories() | <START>")
 
         # Check if data exists / is stale (> 1 month)
         db_cur_one.execute("select COUNT(*) from zmt_categories where TO_CHAR(INSERT_DT,'YYYY') = "
                            "TO_CHAR(SYSDATE, 'YYYY')")
         for values in db_cur_one:
             if values[0] is 0:
-                log.info("Data stale/unavailable. Refreshing...")
+                log.info("get_categories() | Data stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
                 response = requests.get(base_url + '/categories', params='', headers=headers).json()
@@ -88,20 +88,21 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for category in range(len(response['categories'])):
-                    log.info("Adding Category: " + response['categories'][category]['categories']['name'])
+                    log.info("get_categories() | Adding Category: "
+                             + response['categories'][category]['categories']['name'])
                     db_cur_two.execute("insert into ZMT_CATEGORIES values (:category_id, :category_name, SYSDATE)",
                                        category_id=response['categories'][category]['categories']['id'],
                                        category_name=response['categories'][category]['categories']['name'])
                 db_conn.commit()
 
             else:
-                log.info("Data is current. Refresh skipped.")
+                log.info("get_categories() | Data is current. Refresh skipped.")
 
-        log.info("get_categories() | <END>")
+        log.debug("get_categories() | <END>")
 
     def get_cities(self, headers, query):
         """Refresh Zomato Cities data"""
-        log.info("get_cities() | <START>")
+        log.debug("get_cities() | <START>")
 
         # Request data
         response = requests.get(base_url + '/cities?q=' + query + '&count=1', params='', headers=headers).json()
@@ -110,7 +111,7 @@ class ZomatoClient:
         db_cur_one.execute("select count(*) from ZMT_CITIES where CITY_NAME = :name", name=query)
         for values in db_cur_one:
             if values[0] is 0:
-                log.info("Adding City: " + query)
+                log.info("get_cities() | Adding City: " + query)
 
                 db_cur_two.execute("insert into ZMT_CITIES values (:city_id, :city_name, :country_id, :country_name, "
                                    "SYSDATE)",
@@ -120,19 +121,19 @@ class ZomatoClient:
                                    country_name=response['location_suggestions'][0]['country_name'])
                 db_conn.commit()
 
-        log.info("get_cities() | <END>")
+        log.debug("get_cities() | <END>")
         return str(response['location_suggestions'][0]['id'])
 
     def get_cuisines(self, headers, city_id):
         """Refresh Zomato Cuisines data"""
-        log.info("get_cuisines() | <START>")
+        log.debug("get_cuisines() | <START>")
 
         # Check if data exists / is stale (> 1 month)
         db_cur_one.execute("select COUNT(*) from zmt_cuisines where TO_CHAR(INSERT_DT,'YYYY') = "
                            "TO_CHAR(SYSDATE, 'YYYY')")
         for values in db_cur_one:
             if values[0] is 0:
-                log.info("Data is stale/unavailable. Refreshing...")
+                log.info("get_cuisines() | Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
                 response = requests.get(base_url + '/cuisines?city_id=' + city_id, params='', headers=headers).json()
@@ -140,7 +141,8 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for cuisine in range(len(response['cuisines'])):
-                    log.info("Adding Cuisine: " + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
+                    log.info("get_cuisines() | Adding Cuisine: "
+                             + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
 
                     db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, "
                                        "SYSDATE)",
@@ -149,14 +151,14 @@ class ZomatoClient:
                                        cuisine_name=response['cuisines'][cuisine]['cuisine']['cuisine_name'])
                 db_conn.commit()
             else:
-                log.info("Data is current. Refresh skipped.")
+                log.info("get_cuisines() | Data is current. Refresh skipped.")
 
-        log.info("get_cuisines() | <END>")
+        log.debug("get_cuisines() | <END>")
         return 0
 
     def get_establishments(self, headers, city_id):
         """Refresh Zomato Establishments data"""
-        log.info("get_establishments() | <START>")
+        log.debug("get_establishments() | <START>")
 
         # Check if data exists / is stale (> 1 month)
         db_cur_one.execute("select COUNT(*) from zmt_establishments where TO_CHAR(INSERT_DT,'YYYY') = "
@@ -164,7 +166,7 @@ class ZomatoClient:
 
         for values in db_cur_one:
             if values[0] is 0:
-                log.info("Data is stale/unavailable. Refreshing...")
+                log.info("get_establishments() | Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
                 response = requests.get(base_url + '/establishments?city_id=' + city_id, params='',
@@ -173,7 +175,7 @@ class ZomatoClient:
 
                 # Loop through response and populate table
                 for establishment in range(len(response['establishments'])):
-                    log.info("Adding Establishment: "
+                    log.info("get_establishments() | Adding Establishment: "
                              + response['establishments'][establishment]['establishment']['name'])
 
                     db_cur_two.execute("insert into ZMT_ESTABLISHMENTS values (:city_id, :establishment_id, "
@@ -185,41 +187,54 @@ class ZomatoClient:
                                        ['name'])
                 db_conn.commit()
             else:
-                log.info("Data is current. Refreshing...")
+                log.info("get_establishments() | Data is current. Refresh skipped.")
 
-        log.info("get_establishments() | <END>")
+        log.debug("get_establishments() | <END>")
         return 0
 
     def get_collections(self, headers, city_id):
         """Refresh Zomato Collections data"""
-        log.info("get_collections() | <START>")
+        log.debug("get_collections() | <START>")
 
-        # Request data and cleanup table
-        response = requests.get(base_url + '/collections?city_id=' + city_id, params='', headers=headers).json()
-        db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM') and "
+        # Check if data exists / is stale (> 1 month)
+        db_cur_one.execute("select COUNT(*) from ZMT_COLLECTIONS where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM') and "
                            "CITY_ID = :city_id",
                            city_id=city_id)
+        for values in db_cur_one:
+            if values[0] is 0:
+                log.info("get_collections() | Data stale/unavailable. Refreshing...")
 
-        # Loop through response and populate table
-        for collection in range(len(response['collections'])):
-            log.info("Adding Collection: " + response['collections'][collection]['collection']['title'])
+                # Request data and cleanup table
+                response = requests.get(base_url + '/collections?city_id=' + city_id, params='', headers=headers).json()
+                db_cur_one.execute("delete from ZMT_COLLECTIONS where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM') and "
+                                   "CITY_ID = :city_id",
+                                   city_id=city_id)
 
-            db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
-                               ":collection_id, :title, :description, :url, :share_url, :res_count, SYSDATE)",
-                               city_id=city_id,
-                               collection_id=response['collections'][collection]['collection']['collection_id'],
-                               title=response['collections'][collection]['collection']['title'],
-                               description=response['collections'][collection]['collection']['description'],
-                               url=response['collections'][collection]['collection']['url'],
-                               share_url=response['collections'][collection]['collection']['share_url'],
-                               res_count=response['collections'][collection]['collection']['res_count'])
-        db_conn.commit()
-        log.info("get_collections() | <END>")
+                # Loop through response and populate table
+                for collection in range(len(response['collections'])):
+                    log.info("get_collections() | Adding Collection: "
+                             + response['collections'][collection]['collection']['title'])
+
+                    db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
+                                       ":collection_id, :title, :description, :url, :share_url, :res_count, SYSDATE)",
+                                       city_id=city_id,
+                                       collection_id=response['collections'][collection]['collection']['collection_id'],
+                                       title=response['collections'][collection]['collection']['title'],
+                                       description=response['collections'][collection]['collection']['description'],
+                                       url=response['collections'][collection]['collection']['url'],
+                                       share_url=response['collections'][collection]['collection']['share_url'],
+                                       res_count=response['collections'][collection]['collection']['res_count'])
+                db_conn.commit()
+
+            else:
+                log.info("get_collections() | Data is current. Refresh skipped.")
+
+        log.debug("get_collections() | <END>")
         return 0
 
     def get_locations(self, headers, query):
         """Refresh Zomato Locations data"""
-        log.info("get_locations() | <START>")
+        log.debug("get_locations() | <START>")
 
         # Request data and cleanup table
         response = requests.get(base_url + '/locations?query=' + query + '&count=1', params='', headers=headers).json()
@@ -227,7 +242,7 @@ class ZomatoClient:
                            entity_id=str(response['location_suggestions'][0]['entity_id']))
 
         # Populate table
-        log.info("Adding Location: " + response['location_suggestions'][0]['title'])
+        log.info("get_locations() | Adding Location: " + response['location_suggestions'][0]['title'])
 
         db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
                            ":city_id, :city_name, :country_id, :country_name, SYSDATE)",
@@ -241,13 +256,13 @@ class ZomatoClient:
                            country_id=response['location_suggestions'][0]['country_id'],
                            country_name=response['location_suggestions'][0]['country_name'])
         db_conn.commit()
-        log.info("get_locations() | <END>")
+        log.debug("get_locations() | <END>")
 
         return str(response['location_suggestions'][0]['entity_id']), response['location_suggestions'][0]['entity_type']
 
     def get_location_details(self, headers, entity_id, entity_type):
         """Refresh Zomato Location Details data"""
-        log.info("get_locations_details() | <START>")
+        log.debug("get_locations_details() | <START>")
 
         # Request data and cleanup table
         response = requests.get(base_url + '/location_details?entity_id=' + entity_id + '&entity_type=' + entity_type,
@@ -277,12 +292,12 @@ class ZomatoClient:
                            num_restaurant=response['num_restaurant'])
         db_conn.commit()
 
-        log.info("get_locations_details() | <END>")
+        log.debug("get_locations_details() | <END>")
         return 0
 
     def get_search_bylocation(self, headers, query, entity_id, entity_type):
         """Search Zomato Restaurants by Location"""
-        log.info("get_search_bylocation() | <START>")
+        log.debug("get_search_bylocation() | <START>")
 
         search_parameters = ('entity_id=' + entity_id + '&entity_type=' + entity_type + '&q=' + query)
         results_start = 0
@@ -325,8 +340,9 @@ class ZomatoClient:
                                    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
                 for values in db_cur_one:
                     if values[0] is 0:
-                        log.info("Adding Restaurant: " + response['restaurants'][restaurant]['restaurant']['name']
-                                 + ', ' + response['restaurants'][restaurant]['restaurant']['location']['locality'])
+                        log.info("get_search_bylocation() | Adding Restaurant: "
+                                 + response['restaurants'][restaurant]['restaurant']['name'] + ', '
+                                 + response['restaurants'][restaurant]['restaurant']['location']['locality'])
 
                         db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, "
                                            ":url, :locality, :city_id, :latitude, :longitude, :search_parameters, "
@@ -376,64 +392,76 @@ class ZomatoClient:
                 results_shown = results_end - results_start
         db_conn.commit()
 
-        log.info("get_search_bylocation() | <END>")
+        log.debug("get_search_bylocation() | <END>")
         return 0
 
     def get_search_bycollection(self, headers, query):
         """Search Zomato Restaurants by Collections"""
-        log.info("get_search_bycollection() | <START>")
+        log.debug("get_search_bycollection() | <START>")
 
         # Cleanup current month's data, if any
-        db_cur_one.execute("delete from ZMT_COLLECTIONS_EXT where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
+        # db_cur_one.execute("delete from ZMT_COLLECTIONS_EXT where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
 
-        # Loop through Collection list
-        db_cur_two.execute("select distinct CITY_ID, COLLECTION_ID from ZMT_COLLECTIONS order by CITY_ID, "
-                           "COLLECTION_ID")
-        for values in db_cur_two:
-            collection_id = values[1]
-            search_parameters = ('collection_id=' + str(collection_id) + '&q=' + query)
-            results_start = 0
-            results_end = 100
-            results_shown = 20
+        # Check if data exists / is stale (> 1 month)
+        db_cur_one.execute("select COUNT(*) from ZMT_COLLECTIONS_EXT where PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')")
 
-            # Due to API restriction, request restricted to <= 20 records
-            while results_start < results_end:
-                response = requests.get(base_url + '/search?' + search_parameters + '&start=' + str(results_start)
-                                        + '&count=' + str(results_shown) + '&sort=rating&order=desc', params='',
-                                        headers=headers).json()
+        for values in db_cur_one:
+            if values[0] is 0:
+                log.info("get_search_bycollection() | Data stale/unavailable. Refreshing...")
 
-                # results_found = response['results_found']
-                results_start = response['results_start']
-                results_shown = response['results_shown']
+                # Loop through Collection list
+                db_cur_two.execute("select distinct CITY_ID, COLLECTION_ID from ZMT_COLLECTIONS order by CITY_ID, "
+                                   "COLLECTION_ID")
+                for values in db_cur_two:
+                    collection_id = values[1]
+                    search_parameters = ('collection_id=' + str(collection_id) + '&q=' + query)
+                    results_start = 0
+                    results_end = 100
+                    results_shown = 20
 
-                log.debug("Results Start:" + str(results_start))
-                log.debug("Results Shown:" + str(results_shown))
+                    # Due to API restriction, request restricted to <= 20 records
+                    while results_start < results_end:
+                        response = requests.get(
+                            base_url + '/search?' + search_parameters + '&start=' + str(results_start)
+                            + '&count=' + str(results_shown) + '&sort=rating&order=desc', params='',
+                            headers=headers).json()
 
-                # Loop through response and populate table
-                for restaurant in range(len(response['restaurants'])):
-                    log.debug(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
-                              + ' ' + str(collection_id)
-                              + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
+                        # results_found = response['results_found']
+                        results_start = response['results_start']
+                        results_shown = response['results_shown']
 
-                    db_cur_one.execute("insert into ZMT_COLLECTIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
-                                       ":collection_id, :restaurant_id, :search_parameters, SYSDATE)",
-                                       city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
-                                       collection_id=collection_id,
-                                       restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                       search_parameters=search_parameters)
-                results_start = results_start + 20
+                        log.debug("Results Start:" + str(results_start))
+                        log.debug("Results Shown:" + str(results_shown))
 
-                # Determine request limit
-                if results_end - results_start < 20:
-                    results_shown = results_end - results_start
-        db_conn.commit()
+                        # Loop through response and populate table
+                        for restaurant in range(len(response['restaurants'])):
+                            log.debug(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
+                                      + ' ' + str(collection_id)
+                                      + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
 
-        log.info("get_search_bycollection() | <END>")
+                            db_cur_one.execute(
+                                "insert into ZMT_COLLECTIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
+                                ":collection_id, :restaurant_id, :search_parameters, SYSDATE)",
+                                city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
+                                collection_id=collection_id,
+                                restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
+                                search_parameters=search_parameters)
+                        results_start = results_start + 20
+
+                        # Determine request limit
+                        if results_end - results_start < 20:
+                            results_shown = results_end - results_start
+                db_conn.commit()
+
+            else:
+                log.info("get_collections_ext() | Data is current. Refresh skipped.")
+
+        log.debug("get_search_bycollection() | <END>")
         return 0
 
     def get_restaurant_bycollection(self, headers):
         """Retrieve Zomato Restaurants data for Collections"""
-        log.info("get_restaurant_bycollection() | <START>")
+        log.debug("get_restaurant_bycollection() | <START>")
 
         # Determine Restaurants for which data is not available
         db_cur_one.execute("""select distinct RESTAURANT_ID 
@@ -462,7 +490,8 @@ class ZomatoClient:
                       + ' ' + str(response['has_online_delivery'])
                       + ' ' + str(response['has_table_booking']))
 
-            log.info("Adding Restaurant: " + response['name'] + ', ' + response['location']['locality'])
+            log.info("get_restaurant_bycollection() | Adding Restaurant: " + response['name'] + ', '
+                     + response['location']['locality'])
             db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
                                ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",
                                restaurant_id=str(response['id']),
@@ -486,7 +515,7 @@ class ZomatoClient:
                                has_table_booking=str(response['has_table_booking']))
             db_conn.commit()
 
-        log.info("get_restaurant_bycollection() | <END>")
+        log.debug("get_restaurant_bycollection() | <END>")
         return 0
 
 
@@ -497,30 +526,42 @@ class ZomatoAlerts:
         log.debug("compose_alert() " + locality + " | <START>")
         alert_body = ""
 
-        # Retrieve Parameter | City Names
-        db_cur_one.execute("select ZR.LOC_LOCALITY, ZR.RESTAURANT_NAME, ZR_EXT.USER_RATING_AGGREGATE, "
-                           "       ZR_EXT.AVERAGE_COST_FOR_TWO, ZR_EXT.CUISINES, ZR.URL"
+        # Check if data exists
+        db_cur_one.execute("select COUNT(*)"
                            "  from ZMT_RESTAURANTS ZR, ZMT_RESTAURANTS_EXT ZR_EXT"
                            " where ZR.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID"
                            "   and TO_CHAR(ZR.INSERT_DT, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')"
                            "   and ZR_EXT.PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')"
                            "   and ZR.LOC_LOCALITY like :locality", locality=locality)
-        for values in db_cur_one:
-            res_locality = values[0]
-            res_name = values[1]
-            res_user_rating = values[2]
-            res_cost_for_two = values[3]
-            res_cuisines = values[4]
-            res_url = values[5]
-            alert_body += '<tr>' \
-                          + '<td>' + res_locality + '</td>' \
-                          + '<td>' + '<a href=' + res_url + '>' + res_name + '</a>' + '</td>' \
-                          + '<td>' + str(res_user_rating) + '</td>' \
-                          + '<td>' + str(res_cost_for_two) + '</td>' \
-                          + '<td>' + res_cuisines + '</td>' \
-                          + '</tr>'
 
-        alert_body += '</table></body>'
+        for count in db_cur_one:
+            if count[0] is 0:
+                log.info("compose_alert() | " + locality + " | Data unavailable. Alert skipped.")
+                alert_body = "0"
+            else:
+                db_cur_two.execute("select ZR.LOC_LOCALITY, ZR.RESTAURANT_NAME, ZR_EXT.USER_RATING_AGGREGATE, "
+                                   "       ZR_EXT.AVERAGE_COST_FOR_TWO, ZR_EXT.CUISINES, ZR.URL"
+                                   "  from ZMT_RESTAURANTS ZR, ZMT_RESTAURANTS_EXT ZR_EXT"
+                                   " where ZR.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID"
+                                   "   and TO_CHAR(ZR.INSERT_DT, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')"
+                                   "   and ZR_EXT.PERIOD = TO_CHAR(SYSDATE, 'YYYYMM')"
+                                   "   and ZR.LOC_LOCALITY like :locality", locality=locality)
+                for values in db_cur_two:
+                    res_locality = values[0]
+                    res_name = values[1]
+                    res_user_rating = values[2]
+                    res_cost_for_two = values[3]
+                    res_cuisines = values[4]
+                    res_url = values[5]
+                    alert_body += '<tr>' \
+                                  + '<td>' + res_locality + '</td>' \
+                                  + '<td>' + '<a href=' + res_url + '>' + res_name + '</a>' + '</td>' \
+                                  + '<td>' + str(res_user_rating) + '</td>' \
+                                  + '<td>' + str(res_cost_for_two) + '</td>' \
+                                  + '<td>' + res_cuisines + '</td>' \
+                                  + '</tr>'
+
+                alert_body += '</table></body>'
 
         log.debug("compose_alert() " + locality + " | <END>")
         return alert_body
@@ -528,7 +569,6 @@ class ZomatoAlerts:
     def send_alert(self, api_key, alert_body, locality):
         """Send Alert"""
         log.debug("send_alert() " + locality + " | <START>")
-
         alert_header = "<head>" \
                        "  <style>" \
                        "    table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%; } " \
@@ -546,13 +586,28 @@ class ZomatoAlerts:
                        "      <th>Cuisines</th>" \
                        "    </tr>"
 
-        requests.post(
-            "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
-            auth=("api", api_key),
-            data={"from": "Mailgun Sandbox <postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
-                  "to": "Nitin Pai <pai.nitin+mailgun@gmail.com>",
-                  "subject": "Zomato Alert | " + locality,
-                  "html": alert_header + alert_body})
+        if alert_body != "0":
+            # Check if subscribers exists
+            db_cur_one.execute("select COUNT(*) from ZMT_ALERTS")
+
+            for count in db_cur_one:
+                if count[0] is 0:
+                    log.info("compose_alert() | " + locality + " | No subscribers. Alert skipped.")
+                    alert_body = "0"
+                else:
+                    db_cur_two.execute("select SUBS_NAME, SUBS_MAIL_ID from ZMT_ALERTS")
+                    for values in db_cur_two:
+                        subs_name = values[0]
+                        subs_mail_id = values[1]
+
+                        requests.post(
+                            "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
+                            auth=("api", api_key),
+                            data={"from": "Mailgun Sandbox "
+                                          "<postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
+                                  "to": subs_name + " <" + subs_mail_id + ">",
+                                  "subject": "Zomato Alert | " + locality,
+                                  "html": alert_header + alert_body})
 
         log.debug("send_alert() " + locality + " | <END>")
 

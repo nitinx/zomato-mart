@@ -76,7 +76,7 @@ if __name__ == '__main__':
     ZmtClient.get_search_bycollection(headers, city)
     ZmtClient.get_restaurant_bycollection(headers)
 
-    # Fetch Location/Restaurant data
+    # Send New Restaurant Alert(s)
     for locality in range(len(localities)):
         ZmtAlert.send_alert(api_key_mailgun, ZmtAlert.compose_alert('%' + localities[locality] + '%'),
                             localities[locality])

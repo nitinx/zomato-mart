@@ -10,6 +10,7 @@ drop table zmt_locations_ext;
 drop table zmt_restaurants;
 drop table zmt_restaurants_ext;
 drop table zmt_parameters;
+drop table zmt_alerts;
 
 --CREATE Tables
 create table zmt_categories
@@ -129,6 +130,13 @@ active_flag varchar2(1),
 insert_dt date
 );
 
+create table zmt_alerts
+(
+subs_name varchar2(100),
+subs_mail_id varchar2(200),
+insert_dt date
+);
+
 select * from zmt_categories;
 select * from zmt_cities;
 select * from zmt_collections;
@@ -140,3 +148,4 @@ select * from zmt_locations_ext;
 select * from zmt_restaurants;
 select * from zmt_restaurants_ext;
 select * from zmt_parameters;
+select * from zmt_alerts;
