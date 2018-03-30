@@ -21,8 +21,8 @@ This process is currently manual and involves the following steps:
 
 Pre-Requisites
 ------------
-Zomato API key is required to connect to the APIs and can be generated [here](https://developers.zomato.com/api).
-For alert functionality (optional), Mailgun API key is required and can be generated [here](https://www.mailgun.com/).
+1. Zomato API key is required to connect to the APIs and can be generated [here](https://developers.zomato.com/api).
+2. For alert functionality (optional), Mailgun API key is required and can be generated [here](https://www.mailgun.com/).
 
 In the Backlog
 ------------
