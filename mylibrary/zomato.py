@@ -13,6 +13,7 @@ import requests
 import logging
 import json
 from mylibrary.db_oracle import OracleClient
+from mylibrary.zomato_db_oracle import ZomatoDBInsertOracle
 from time import gmtime, strftime
 
 # Define Zomato Base URL
@@ -23,6 +24,8 @@ DB = OracleClient()
 db_conn = DB.db_login()
 db_cur_one = db_conn.cursor()
 db_cur_two = db_conn.cursor()
+
+ZmtInsert = ZomatoDBInsertOracle()
 
 log = logging.getLogger(__name__)
 
@@ -90,10 +93,13 @@ class ZomatoClient:
                 for category in range(len(response['categories'])):
                     log.info("get_categories() | Adding Category: "
                              + response['categories'][category]['categories']['name'])
-                    db_cur_two.execute("insert into ZMT_CATEGORIES values (:category_id, :category_name, SYSDATE)",
-                                       category_id=response['categories'][category]['categories']['id'],
-                                       category_name=response['categories'][category]['categories']['name'])
-                db_conn.commit()
+                    #db_cur_two.execute("insert into ZMT_CATEGORIES values (:category_id, :category_name, SYSDATE)",
+                    #                   category_id=response['categories'][category]['categories']['id'],
+                    #                   category_name=response['categories'][category]['categories']['name'])
+                    ZmtInsert.insert_categories(response['categories'][category]['categories']['id'],
+                                                response['categories'][category]['categories']['name'])
+
+                #db_conn.commit()
 
             else:
                 log.info("get_categories() | Data is current. Refresh skipped.")
@@ -113,13 +119,18 @@ class ZomatoClient:
             if values[0] is 0:
                 log.info("get_cities() | Adding City: " + query)
 
-                db_cur_two.execute("insert into ZMT_CITIES values (:city_id, :city_name, :country_id, :country_name, "
-                                   "SYSDATE)",
-                                   city_id=response['location_suggestions'][0]['id'],
-                                   city_name=response['location_suggestions'][0]['name'],
-                                   country_id=response['location_suggestions'][0]['country_id'],
-                                   country_name=response['location_suggestions'][0]['country_name'])
-                db_conn.commit()
+                # db_cur_two.execute("insert into ZMT_CITIES values (:city_id, :city_name, :country_id, :country_name, "
+                #                   "SYSDATE)",
+                #                   city_id=response['location_suggestions'][0]['id'],
+                #                   city_name=response['location_suggestions'][0]['name'],
+                #                   country_id=response['location_suggestions'][0]['country_id'],
+                #                   country_name=response['location_suggestions'][0]['country_name'])
+                #db_conn.commit()
+
+                ZmtInsert.insert_cities(response['location_suggestions'][0]['id'],
+                                            response['location_suggestions'][0]['name'],
+                                            response['location_suggestions'][0]['country_id'],
+                                            response['location_suggestions'][0]['country_name'])
 
         log.debug("get_cities() | <END>")
         return str(response['location_suggestions'][0]['id'])
@@ -144,12 +155,16 @@ class ZomatoClient:
                     log.info("get_cuisines() | Adding Cuisine: "
                              + response['cuisines'][cuisine]['cuisine']['cuisine_name'])
 
-                    db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, "
-                                       "SYSDATE)",
-                                       city_id=city_id,
-                                       cuisine_id=response['cuisines'][cuisine]['cuisine']['cuisine_id'],
-                                       cuisine_name=response['cuisines'][cuisine]['cuisine']['cuisine_name'])
-                db_conn.commit()
+                    #db_cur_two.execute("insert into ZMT_CUISINES values (:city_id, :cuisine_id, :cuisine_name, "
+                    #                   "SYSDATE)",
+                    #                   city_id=city_id,
+                    #                   cuisine_id=response['cuisines'][cuisine]['cuisine']['cuisine_id'],
+                    #                   cuisine_name=response['cuisines'][cuisine]['cuisine']['cuisine_name'])
+                    ZmtInsert.insert_cuisines(city_id,
+                                              response['cuisines'][cuisine]['cuisine']['cuisine_id'],
+                                              response['cuisines'][cuisine]['cuisine']['cuisine_name'])
+
+                #db_conn.commit()
             else:
                 log.info("get_cuisines() | Data is current. Refresh skipped.")
 
@@ -178,14 +193,18 @@ class ZomatoClient:
                     log.info("get_establishments() | Adding Establishment: "
                              + response['establishments'][establishment]['establishment']['name'])
 
-                    db_cur_two.execute("insert into ZMT_ESTABLISHMENTS values (:city_id, :establishment_id, "
-                                       ":establishment_name, SYSDATE)",
-                                       city_id=city_id,
-                                       establishment_id=response['establishments'][establishment]['establishment']
-                                       ['id'],
-                                       establishment_name=response['establishments'][establishment]['establishment']
-                                       ['name'])
-                db_conn.commit()
+                    #db_cur_two.execute("insert into ZMT_ESTABLISHMENTS values (:city_id, :establishment_id, "
+                    #                   ":establishment_name, SYSDATE)",
+                    #                   city_id=city_id,
+                    #                   establishment_id=response['establishments'][establishment]['establishment']
+                    #                   ['id'],
+                    #                   establishment_name=response['establishments'][establishment]['establishment']
+                    #                   ['name'])
+                    ZmtInsert.insert_establishments(city_id,
+                                                    response['establishments'][establishment]['establishment']['id'],
+                                                    response['establishments'][establishment]['establishment']['name'])
+
+                #db_conn.commit()
             else:
                 log.info("get_establishments() | Data is current. Refresh skipped.")
 
@@ -215,16 +234,24 @@ class ZomatoClient:
                     log.info("get_collections() | Adding Collection: "
                              + response['collections'][collection]['collection']['title'])
 
-                    db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
-                                       ":collection_id, :title, :description, :url, :share_url, :res_count, SYSDATE)",
-                                       city_id=city_id,
-                                       collection_id=response['collections'][collection]['collection']['collection_id'],
-                                       title=response['collections'][collection]['collection']['title'],
-                                       description=response['collections'][collection]['collection']['description'],
-                                       url=response['collections'][collection]['collection']['url'],
-                                       share_url=response['collections'][collection]['collection']['share_url'],
-                                       res_count=response['collections'][collection]['collection']['res_count'])
-                db_conn.commit()
+                    #db_cur_one.execute("insert into ZMT_COLLECTIONS values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
+                    #                   ":collection_id, :title, :description, :url, :share_url, :res_count, SYSDATE)",
+                    #                   city_id=city_id,
+                    #                   collection_id=response['collections'][collection]['collection']['collection_id'],
+                    #                   title=response['collections'][collection]['collection']['title'],
+                    #                   description=response['collections'][collection]['collection']['description'],
+                    #                   url=response['collections'][collection]['collection']['url'],
+                    #                   share_url=response['collections'][collection]['collection']['share_url'],
+                    #                   res_count=response['collections'][collection]['collection']['res_count'])
+                    ZmtInsert.insert_collections(city_id,
+                                                 response['collections'][collection]['collection']['collection_id'],
+                                                 response['collections'][collection]['collection']['title'],
+                                                 response['collections'][collection]['collection']['description'],
+                                                 response['collections'][collection]['collection']['url'],
+                                                 response['collections'][collection]['collection']['share_url'],
+                                                 response['collections'][collection]['collection']['res_count'])
+
+                #db_conn.commit()
 
             else:
                 log.info("get_collections() | Data is current. Refresh skipped.")
@@ -244,18 +271,29 @@ class ZomatoClient:
         # Populate table
         log.info("get_locations() | Adding Location: " + response['location_suggestions'][0]['title'])
 
-        db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
-                           ":city_id, :city_name, :country_id, :country_name, SYSDATE)",
-                           entity_id=response['location_suggestions'][0]['entity_id'],
-                           entity_type=response['location_suggestions'][0]['entity_type'],
-                           title=response['location_suggestions'][0]['title'],
-                           latitude=response['location_suggestions'][0]['latitude'],
-                           longitude=response['location_suggestions'][0]['longitude'],
-                           city_id=response['location_suggestions'][0]['city_id'],
-                           city_name=response['location_suggestions'][0]['city_name'],
-                           country_id=response['location_suggestions'][0]['country_id'],
-                           country_name=response['location_suggestions'][0]['country_name'])
-        db_conn.commit()
+        #db_cur_one.execute("insert into ZMT_LOCATIONS values (:entity_id, :entity_type, :title, :latitude, :longitude, "
+        #                   ":city_id, :city_name, :country_id, :country_name, SYSDATE)",
+        #                   entity_id=response['location_suggestions'][0]['entity_id'],
+        #                   entity_type=response['location_suggestions'][0]['entity_type'],
+        #                   title=response['location_suggestions'][0]['title'],
+        #                   latitude=response['location_suggestions'][0]['latitude'],
+        #                   longitude=response['location_suggestions'][0]['longitude'],
+        #                   city_id=response['location_suggestions'][0]['city_id'],
+        #                   city_name=response['location_suggestions'][0]['city_name'],
+        #                   country_id=response['location_suggestions'][0]['country_id'],
+        #                   country_name=response['location_suggestions'][0]['country_name'])
+        #db_conn.commit()
+
+        ZmtInsert.insert_locations(response['location_suggestions'][0]['entity_id'],
+                                   response['location_suggestions'][0]['entity_type'],
+                                   response['location_suggestions'][0]['title'],
+                                   response['location_suggestions'][0]['latitude'],
+                                   response['location_suggestions'][0]['longitude'],
+                                   response['location_suggestions'][0]['city_id'],
+                                   response['location_suggestions'][0]['city_name'],
+                                   response['location_suggestions'][0]['country_id'],
+                                   response['location_suggestions'][0]['country_name'])
+
         log.debug("get_locations() | <END>")
 
         return str(response['location_suggestions'][0]['entity_id']), response['location_suggestions'][0]['entity_type']
@@ -280,17 +318,25 @@ class ZomatoClient:
                   + ' ' + str(response['nightlife_res'])
                   + ' ' + str(response['num_restaurant']))
 
-        db_cur_one.execute("insert into ZMT_LOCATIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :entity_id, :popularity, "
-                           ":nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, :num_restaurant, "
-                           "SYSDATE)",
-                           entity_id=entity_id,
-                           popularity=response['popularity'],
-                           nightlife_index=response['nightlife_index'],
-                           top_cuisines=str(response['top_cuisines']),
-                           popularity_res=response['popularity_res'],
-                           nightlife_res=response['nightlife_res'],
-                           num_restaurant=response['num_restaurant'])
-        db_conn.commit()
+        #db_cur_one.execute("insert into ZMT_LOCATIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :entity_id, :popularity, "
+        #                   ":nightlife_index, :top_cuisines, :popularity_res, :nightlife_res, :num_restaurant, "
+        #                   "SYSDATE)",
+        #                   entity_id=entity_id,
+        #                   popularity=response['popularity'],
+        #                   nightlife_index=response['nightlife_index'],
+        #                   top_cuisines=str(response['top_cuisines']),
+        #                   popularity_res=response['popularity_res'],
+        #                   nightlife_res=response['nightlife_res'],
+        #                   num_restaurant=response['num_restaurant'])
+        #db_conn.commit()
+
+        ZmtInsert.insert_locations_ext(entity_id,
+                                       response['popularity'],
+                                       response['nightlife_index'],
+                                       str(response['top_cuisines']),
+                                       response['popularity_res'],
+                                       response['nightlife_res'],
+                                       response['num_restaurant'])
 
         log.debug("get_locations_details() | <END>")
         return 0
@@ -344,21 +390,34 @@ class ZomatoClient:
                                  + response['restaurants'][restaurant]['restaurant']['name'] + ', '
                                  + response['restaurants'][restaurant]['restaurant']['location']['locality'])
 
-                        db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, "
-                                           ":url, :locality, :city_id, :latitude, :longitude, :search_parameters, "
-                                           "SYSDATE)",
-                                           restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                           restaurant_name=response['restaurants'][restaurant]['restaurant']['name'],
-                                           url=response['restaurants'][restaurant]['restaurant']['url'],
-                                           locality=response['restaurants'][restaurant]['restaurant']['location']
-                                           ['locality'],
-                                           city_id=response['restaurants'][restaurant]['restaurant']['location']
-                                           ['city_id'],
-                                           latitude=response['restaurants'][restaurant]['restaurant']['location']
-                                           ['latitude'],
-                                           longitude=response['restaurants'][restaurant]['restaurant']['location']
-                                           ['longitude'],
-                                           search_parameters=search_parameters)
+                        #db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, "
+                        #                   ":url, :locality, :city_id, :latitude, :longitude, :search_parameters, "
+                        #                   "SYSDATE)",
+                        #                   restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
+                        #                   restaurant_name=response['restaurants'][restaurant]['restaurant']['name'],
+                        #                   url=response['restaurants'][restaurant]['restaurant']['url'],
+                        #                   locality=response['restaurants'][restaurant]['restaurant']['location']
+                        #                   ['locality'],
+                        #                   city_id=response['restaurants'][restaurant]['restaurant']['location']
+                        #                   ['city_id'],
+                        #                   latitude=response['restaurants'][restaurant]['restaurant']['location']
+                        #                   ['latitude'],
+                        #                   longitude=response['restaurants'][restaurant]['restaurant']['location']
+                        #                   ['longitude'],
+                        #                   search_parameters=search_parameters)
+
+                        ZmtInsert.insert_restaurants(response['restaurants'][restaurant]['restaurant']['id'],
+                                                     response['restaurants'][restaurant]['restaurant']['name'],
+                                                     response['restaurants'][restaurant]['restaurant']['url'],
+                                                     response['restaurants'][restaurant]['restaurant']['location']
+                                                     ['locality'],
+                                                     response['restaurants'][restaurant]['restaurant']['location']
+                                                     ['city_id'],
+                                                     response['restaurants'][restaurant]['restaurant']['location']
+                                                     ['latitude'],
+                                                     response['restaurants'][restaurant]['restaurant']['location']
+                                                     ['longitude'],
+                                                     search_parameters)
 
                 # Cleanup current month's data, if any
                 db_cur_one.execute("""delete from ZMT_RESTAURANTS_EXT 
@@ -367,30 +426,44 @@ class ZomatoClient:
                                    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'])
 
                 # Populate table
-                db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), "
-                                   ":restaurant_id, :cuisines, :average_cost_for_two, :user_rating_aggregate, "
-                                   ":user_rating_text, :user_rating_votes, :has_online_delivery, :has_table_booking, "
-                                   "SYSDATE)",
-                                   restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                   cuisines=response['restaurants'][restaurant]['restaurant']['cuisines'],
-                                   average_cost_for_two=response['restaurants'][restaurant]['restaurant']
-                                   ['average_cost_for_two'],
-                                   user_rating_aggregate=response['restaurants'][restaurant]['restaurant']
-                                   ['user_rating']['aggregate_rating'],
-                                   user_rating_text=response['restaurants'][restaurant]['restaurant']['user_rating']
-                                   ['rating_text'],
-                                   user_rating_votes=response['restaurants'][restaurant]['restaurant']['user_rating']
-                                   ['votes'],
-                                   has_online_delivery=response['restaurants'][restaurant]['restaurant']
-                                   ['has_online_delivery'],
-                                   has_table_booking=response['restaurants'][restaurant]['restaurant']
-                                   ['has_table_booking'])
+                #db_cur_one.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), "
+                #                   ":restaurant_id, :cuisines, :average_cost_for_two, :user_rating_aggregate, "
+                #                   ":user_rating_text, :user_rating_votes, :has_online_delivery, :has_table_booking, "
+                #                   "SYSDATE)",
+                #                   restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
+                #                   cuisines=response['restaurants'][restaurant]['restaurant']['cuisines'],
+                #                   average_cost_for_two=response['restaurants'][restaurant]['restaurant']
+                #                   ['average_cost_for_two'],
+                #                   user_rating_aggregate=response['restaurants'][restaurant]['restaurant']
+                #                   ['user_rating']['aggregate_rating'],
+                #                   user_rating_text=response['restaurants'][restaurant]['restaurant']['user_rating']
+                #                   ['rating_text'],
+                #                   user_rating_votes=response['restaurants'][restaurant]['restaurant']['user_rating']
+                #                   ['votes'],
+                #                   has_online_delivery=response['restaurants'][restaurant]['restaurant']
+                #                   ['has_online_delivery'],
+                #                   has_table_booking=response['restaurants'][restaurant]['restaurant']
+                #                   ['has_table_booking'])
+                ZmtInsert.insert_restaurants_ext(response['restaurants'][restaurant]['restaurant']['id'],
+                                                 response['restaurants'][restaurant]['restaurant']['cuisines'],
+                                                 response['restaurants'][restaurant]['restaurant']
+                                                 ['average_cost_for_two'],
+                                                 response['restaurants'][restaurant]['restaurant']['user_rating']
+                                                 ['aggregate_rating'],
+                                                 response['restaurants'][restaurant]['restaurant']['user_rating']
+                                                 ['rating_text'],
+                                                 response['restaurants'][restaurant]['restaurant']['user_rating']
+                                                 ['votes'],
+                                                 response['restaurants'][restaurant]['restaurant']
+                                                 ['has_online_delivery'],
+                                                 response['restaurants'][restaurant]['restaurant']['has_table_booking'])
+
             results_start = results_start + 20
 
             # Determine request limit
             if results_end - results_start < 20:
                 results_shown = results_end - results_start
-        db_conn.commit()
+        #db_conn.commit()
 
         log.debug("get_search_bylocation() | <END>")
         return 0
@@ -439,13 +512,19 @@ class ZomatoClient:
                                       + ' ' + str(collection_id)
                                       + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
 
-                            db_cur_one.execute(
-                                "insert into ZMT_COLLECTIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
-                                ":collection_id, :restaurant_id, :search_parameters, SYSDATE)",
-                                city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
-                                collection_id=collection_id,
-                                restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
-                                search_parameters=search_parameters)
+                            #db_cur_one.execute(
+                            #    "insert into ZMT_COLLECTIONS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :city_id, "
+                            #    ":collection_id, :restaurant_id, :search_parameters, SYSDATE)",
+                            #    city_id=response['restaurants'][restaurant]['restaurant']['location']['city_id'],
+                            #    collection_id=collection_id,
+                            #    restaurant_id=response['restaurants'][restaurant]['restaurant']['id'],
+                            #    search_parameters=search_parameters)
+                            ZmtInsert.insert_collections_ext(response['restaurants'][restaurant]['restaurant']
+                                                             ['location']['city_id'],
+                                                             collection_id,
+                                                             response['restaurants'][restaurant]['restaurant']['id'],
+                                                             search_parameters)
+
                         results_start = results_start + 20
 
                         # Determine request limit
@@ -492,28 +571,46 @@ class ZomatoClient:
 
             log.info("get_restaurant_bycollection() | Adding Restaurant: " + response['name'] + ', '
                      + response['location']['locality'])
-            db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
-                               ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",
-                               restaurant_id=str(response['id']),
-                               restaurant_name=response['name'],
-                               url=response['url'],
-                               locality=response['location']['locality'],
-                               city_id=str(response['location']['city_id']),
-                               latitude=str(response['location']['latitude']),
-                               longitude=str(response['location']['longitude']),
-                               search_parameters=search_parameters)
-            db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :restaurant_id, "
-                               ":cuisines, :average_cost_for_two, :user_rating_aggregate, :user_rating_text, "
-                               ":user_rating_votes, :has_online_delivery, :has_table_booking, SYSDATE)",
-                               restaurant_id=str(response['id']),
-                               cuisines=response['cuisines'],
-                               average_cost_for_two=str(response['average_cost_for_two']),
-                               user_rating_aggregate=str(response['user_rating']['aggregate_rating']),
-                               user_rating_text=response['user_rating']['rating_text'],
-                               user_rating_votes=str(response['user_rating']['votes']),
-                               has_online_delivery=str(response['has_online_delivery']),
-                               has_table_booking=str(response['has_table_booking']))
-            db_conn.commit()
+            #db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, :url, "
+            #                   ":locality, :city_id, :latitude, :longitude, :search_parameters, SYSDATE)",
+            #                   restaurant_id=str(response['id']),
+            #                   restaurant_name=response['name'],
+            #                   url=response['url'],
+            #                   locality=response['location']['locality'],
+            #                   city_id=str(response['location']['city_id']),
+            #                   latitude=str(response['location']['latitude']),
+            #                   longitude=str(response['location']['longitude']),
+            #                   search_parameters=search_parameters)
+            ZmtInsert.insert_restaurants_ext(str(response['id']),
+                                             response['name'],
+                                             response['url'],
+                                             response['location']['locality'],
+                                             str(response['location']['city_id']),
+                                             str(response['location']['latitude']),
+                                             str(response['location']['longitude']),
+                                             search_parameters)
+
+            #db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :restaurant_id, "
+            #                   ":cuisines, :average_cost_for_two, :user_rating_aggregate, :user_rating_text, "
+            #                   ":user_rating_votes, :has_online_delivery, :has_table_booking, SYSDATE)",
+            #                   restaurant_id=str(response['id']),
+            #                   cuisines=response['cuisines'],
+            #                   average_cost_for_two=str(response['average_cost_for_two']),
+            #                   user_rating_aggregate=str(response['user_rating']['aggregate_rating']),
+            #                   user_rating_text=response['user_rating']['rating_text'],
+            #                   user_rating_votes=str(response['user_rating']['votes']),
+            #                   has_online_delivery=str(response['has_online_delivery']),
+            #                   has_table_booking=str(response['has_table_booking']))
+            ZmtInsert.insert_restaurants_ext(str(response['id']),
+                                             response['cuisines'],
+                                             str(response['average_cost_for_two']),
+                                             str(response['user_rating']['aggregate_rating']),
+                                             response['user_rating']['rating_text'],
+                                             str(response['user_rating']['votes']),
+                                             str(response['has_online_delivery']),
+                                             str(response['has_table_booking']))
+
+            #db_conn.commit()
 
         log.debug("get_restaurant_bycollection() | <END>")
         return 0
