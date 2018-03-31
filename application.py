@@ -6,15 +6,16 @@ Application that:
  2. Populates the data into the Zomato datamart
  3. Maintains history at a monthly time grain
  4. Fetch is restricted via parameters
+ 5. Sends out new restaurant alerts to subscribers
 
  API Documentation: https://developers.zomato.com/api#headline1
 """
 
 import logging
 from mylibrary.apikey import APIKey
-from mylibrary.zomato import ZomatoParameters
-from mylibrary.zomato import ZomatoClient
-from mylibrary.zomato import ZomatoAlerts
+from mylibrary.zmt_parameters import ZomatoParameters
+from mylibrary.zmt_client import ZomatoClient
+from mylibrary.zmt_alerts import ZomatoAlerts
 from time import gmtime, strftime
 
 log = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ if __name__ == '__main__':
 
     # Initialize Zomato Objects
     ZmtParams = ZomatoParameters()
-    ZmtClient = ZomatoClient()
+    ZmtClient = ZomatoClient(headers)
     ZmtAlert = ZomatoAlerts()
 
     # Retrieve Parameters
@@ -57,24 +58,24 @@ if __name__ == '__main__':
     localities = ZmtParams.getparam_localities()
 
     # Fetch Category data
-    ZmtClient.get_categories(headers)
+    ZmtClient.get_categories()
 
     # Fetch City data
-    city_id = ZmtClient.get_cities(headers, city)
-    ZmtClient.get_cuisines(headers, city_id)
-    ZmtClient.get_establishments(headers, city_id)
+    city_id = ZmtClient.get_cities(city)
+    ZmtClient.get_cuisines(city_id)
+    ZmtClient.get_establishments(city_id)
 
     # Fetch Location/Restaurant data
     for locality in range(len(localities)):
         print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] Processing Locality: " + localities[locality])
-        entity = ZmtClient.get_locations(headers, localities[locality])
-        ZmtClient.get_location_details(headers, entity[0], entity[1])
-        ZmtClient.get_search_bylocation(headers, localities[locality], entity[0], entity[1])
+        entity = ZmtClient.get_locations(localities[locality])
+        ZmtClient.get_location_details(entity[0], entity[1])
+        ZmtClient.get_search_bylocation(localities[locality], entity[0], entity[1])
 
     # Fetch Collection/Restaurant data
-    ZmtClient.get_collections(headers, city_id)
-    ZmtClient.get_search_bycollection(headers, city)
-    ZmtClient.get_restaurant_bycollection(headers)
+    ZmtClient.get_collections(city_id)
+    ZmtClient.get_search_bycollection(city)
+    ZmtClient.get_restaurant_bycollection()
 
     # Send New Restaurant Alert(s)
     for locality in range(len(localities)):
