@@ -109,3 +109,41 @@ class ZomatoAlerts:
 
         log.debug("send_alert() " + locality + " | <END>")
         return 0
+
+    def send_analytics(self, api_key, mail_body):
+        """Send Analytics"""
+        log.debug("send_analytics() | <START>")
+        mail_header = "<head>" \
+                      "  <style>" \
+                      "    table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%; } " \
+                      "    td, th {border: 1px solid #dddddd; text-align:  left; padding: 8px; } " \
+                      "    tr:nth-child(even) {background-color: #dddddd; } " \
+                      "  </style>" \
+                      "</head>" \
+
+        if mail_body != "0":
+            # Check if subscribers exists
+            db_cur_one.execute("select COUNT(*) from ZMT_ALERTS")
+
+            for count in db_cur_one:
+                if count[0] is 0:
+                    log.info("compose_alert() | " + locality + " | No subscribers. Alert skipped.")
+                    mail_body = "0"
+                else:
+                    db_cur_two.execute("select SUBS_NAME, SUBS_MAIL_ID from ZMT_ALERTS")
+                    for values in db_cur_two:
+                        subs_name = values[0]
+                        subs_mail_id = values[1]
+
+                        requests.post(
+                            "https://api.mailgun.net/v3/sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org/messages",
+                            auth=("api", api_key),
+                            files=[("inline", open("plot.png", 'rb'))],
+                            data={"from": "Mailgun Sandbox "
+                                          "<postmaster@sandboxd7ddf28978bc465596fa4cad095cb3ac.mailgun.org>",
+                                  "to": subs_name + " <" + subs_mail_id + ">",
+                                  "subject": "Zomato | Rating Analytics | Across Localities",
+                                  "html": '<html><img src="cid:plot.png"></html>'})
+
+        log.debug("send_analytics() | <END>")
+        return 0

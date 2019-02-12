@@ -92,7 +92,7 @@ class ZomatoClient(object):
                 log.info("get_cuisines() | Data is stale/unavailable. Refreshing...")
 
                 # Request data and cleanup table
-                response = self.ZmtRequest.get_cuisiness(city_id)
+                response = self.ZmtRequest.get_cuisines(city_id)
 
                 db_cur_two.execute("truncate table ZMT_CUISINES")
 
@@ -211,21 +211,25 @@ class ZomatoClient(object):
                            "ENTITY_ID = :entity_id", entity_id=entity_id)
 
         # Populate table
-        log.debug(str(response['location']['entity_id'])
-                  + ' ' + response['location']['entity_type']
-                  + ' ' + str(response['popularity'])
-                  + ' ' + str(response['nightlife_index'])
-                  + ' ' + str(response['top_cuisines'])
-                  + ' ' + str(response['popularity_res'])
-                  + ' ' + str(response['nightlife_res'])
-                  + ' ' + str(response['num_restaurant']))
-        ZmtInsert.insert_locations_ext(entity_id,
-                                       response['popularity'],
-                                       response['nightlife_index'],
-                                       str(response['top_cuisines']),
-                                       response['popularity_res'],
-                                       response['nightlife_res'],
-                                       response['num_restaurant'])
+        try:
+            log.debug(str(response['location']['entity_id'])
+                      + ' ' + response['location']['entity_type']
+                      + ' ' + str(response['popularity'])
+                      + ' ' + str(response['nightlife_index'])
+                      + ' ' + str(response['top_cuisines'])
+                      + ' ' + str(response['popularity_res'])
+                      + ' ' + str(response['nightlife_res'])
+                      + ' ' + str(response['num_restaurant']))
+
+            ZmtInsert.insert_locations_ext(entity_id,
+                                           response['popularity'],
+                                           response['nightlife_index'],
+                                           str(response['top_cuisines']),
+                                           response['popularity_res'],
+                                           response['nightlife_res'],
+                                           response['num_restaurant'])
+        except KeyError:
+            print("KeyError: " + str(response))
         log.debug("get_locations_details() | <END>")
         return 0
 
@@ -374,6 +378,62 @@ class ZomatoClient(object):
                 log.info("get_collections_ext() | Data is current. Refresh skipped.")
 
         log.debug("get_search_bycollection() | <END>")
+        return 0
+
+    def get_search_byestablishmenttype(self, query):
+        """Search Zomato Restaurants by Establishment Type"""
+        log.debug("get_search_byestablishmenttype() | <START>")
+
+        # Check if data exists / is stale (> 1 month)
+        db_cur_one.execute("select COUNT(*) from ZMT_RESTAURANTS where ESTABLISHMENT_ID is NULL "
+                           "and LOC_LOCALITY in (select LOCALITY from zmt_parameters)")
+
+        for count in db_cur_one:
+            if count[0] is 0:
+                log.info("get_search_byestablishmenttype() | Data stale/unavailable. Refreshing...")
+
+                # Loop through Collection list
+                db_cur_two.execute("select RESTAURANT_ID from ZMT_RESTAURANTS where ESTABLISHMENT_ID is NULL "
+                           "and LOC_LOCALITY in (select LOCALITY from zmt_parameters)")
+                for values in db_cur_two:
+                    collection_id = values[1]
+                    search_parameters = ('collection_id=' + str(collection_id) + '&q=' + query)
+                    results_start = 0
+                    results_end = 100
+                    results_shown = 20
+
+                    # Due to API restriction, request restricted to <= 20 records
+                    while results_start < results_end:
+                        response = self.ZmtRequest.get_search(search_parameters, str(results_start), str(results_shown))
+
+                        # results_found = response['results_found']
+                        results_start = response['results_start']
+                        results_shown = response['results_shown']
+
+                        log.debug("Results Start:" + str(results_start))
+                        log.debug("Results Shown:" + str(results_shown))
+
+                        # Loop through response and populate table
+                        for restaurant in range(len(response['restaurants'])):
+                            log.debug(str(response['restaurants'][restaurant]['restaurant']['location']['city_id'])
+                                      + ' ' + str(collection_id)
+                                      + ' ' + str(response['restaurants'][restaurant]['restaurant']['id']))
+                            ZmtInsert.insert_collections_ext(response['restaurants'][restaurant]['restaurant']
+                                                             ['location']['city_id'],
+                                                             collection_id,
+                                                             response['restaurants'][restaurant]['restaurant']['id'],
+                                                             search_parameters)
+
+                        results_start = results_start + 20
+
+                        # Determine request limit
+                        if results_end - results_start < 20:
+                            results_shown = results_end - results_start
+
+            else:
+                log.info("get_search_byestablishmenttype() | Data is current. Refresh skipped.")
+
+        log.debug("get_search_byestablishmenttype() | <END>")
         return 0
 
     def get_restaurant_bycollection(self):

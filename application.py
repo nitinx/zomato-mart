@@ -16,6 +16,7 @@ from mylibrary.apikey import APIKey
 from mylibrary.zmt_parameters import ZomatoParameters
 from mylibrary.zmt_client import ZomatoClient
 from mylibrary.zmt_alerts import ZomatoAlerts
+from mylibrary.zmt_analytics import ZomatoAnalytics
 from time import gmtime, strftime
 
 log = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ if __name__ == '__main__':
     ZmtParams = ZomatoParameters()
     ZmtClient = ZomatoClient(headers)
     ZmtAlert = ZomatoAlerts()
+    ZmtPlot = ZomatoAnalytics()
 
     # Retrieve Parameters
     city = ZmtParams.getparam_city_names()
@@ -73,13 +75,15 @@ if __name__ == '__main__':
         ZmtClient.get_search_bylocation(localities[locality], entity[0], entity[1])
 
     # Fetch Collection/Restaurant data
-    ZmtClient.get_collections(city_id)
-    ZmtClient.get_search_bycollection(city)
-    ZmtClient.get_restaurant_bycollection()
+    #ZmtClient.get_collections(city_id)
+    #ZmtClient.get_search_bycollection(city)
+    #ZmtClient.get_restaurant_bycollection()
 
     # Send New Restaurant Alert(s)
     for locality in range(len(localities)):
         ZmtAlert.send_alert(api_key_mailgun, ZmtAlert.compose_alert('%' + localities[locality] + '%'),
                             localities[locality])
+
+    ZmtAlert.send_analytics(api_key_mailgun, ZmtPlot.plot_locality_stats())
 
     print(strftime("%Y-%b-%d %H:%M:%S", gmtime()) + " | [main()] <END>")

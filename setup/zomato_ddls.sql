@@ -105,7 +105,8 @@ loc_city_id integer,
 loc_latitude varchar2(20),
 loc_longitude varchar2(20),
 search_parameters varchar2(200),
-insert_dt date
+insert_dt date,
+establishment_id integer 
 );
 
 create table zmt_restaurants_ext

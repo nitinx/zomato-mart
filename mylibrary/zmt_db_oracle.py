@@ -158,7 +158,7 @@ class ZomatoDBInsertOracle:
 
         db_cur_two.execute("insert into ZMT_RESTAURANTS values (:restaurant_id, :restaurant_name, "
                            ":url, :locality, :city_id, :latitude, :longitude, :search_parameters, "
-                           "SYSDATE)",
+                           "SYSDATE, NULL)",
                            restaurant_id=restaurant_id,
                            restaurant_name=restaurant_name,
                            url=url,
@@ -191,3 +191,54 @@ class ZomatoDBInsertOracle:
 
         log.debug("insert_restaurants_ext() | <END>")
 
+
+class ZomatoDBUpdateOracle:
+
+    def update_restaurants(self, restaurant_id, establishment_id):
+        """Update ZMT_RESTAURANTS"""
+        log.debug("update_restaurants() | <START>")
+
+        db_cur_two.execute("update ZMT_RESTAURANTS set ESTABLISHMENT_ID = :establishment_id "
+                           "where RESTAURANT_ID = :restaurant_id)",
+                           restaurant_id=restaurant_id,
+                           establishment_id=establishment_id)
+        db_conn.commit()
+
+        log.debug("update_restaurants() | <END>")
+
+
+class ZomatoDBSelectOracle:
+
+    def select_locality_stats(self):
+        """Select ZMT_RESTAURANTS"""
+        log.debug("select_locality_stats() | <START>")
+
+        loc_analytics = []
+
+        db_cur_one.execute("SELECT locality, period, rstrnt_cnt_oth, rstrnt_cnt_top, "
+                           "       round( (rstrnt_cnt_top / (rstrnt_cnt_top + rstrnt_cnt_oth) * 100),0) rstrnt_pct_top, "
+                           "       avg_cost_for_two, avg_rtng_all, top_rtng_all "
+                           "  FROM (SELECT zre.period, zr.loc_locality AS locality, "
+                           "               SUM(CASE "
+                           "                        WHEN to_number(zre.user_rating_aggregate,'9.9') >= 4 "
+                           "                        THEN 1 "
+                           "                        ELSE 0 END) AS rstrnt_cnt_top, "
+                           "               SUM(CASE "
+                           "                        WHEN to_number(zre.user_rating_aggregate,'9.9') < 4 "
+                           "                        THEN 1 "
+                           "                        ELSE 0 END) AS rstrnt_cnt_oth, "
+                           "               round(AVG(zre.average_cost_for_two),-2) AS avg_cost_for_two, "
+                           "               round(AVG(to_number(zre.user_rating_aggregate,'9.9') ),1) AS avg_rtng_all, "
+                           "               round(MAX(to_number(zre.user_rating_aggregate,'9.9') ),1) AS top_rtng_all"
+                           "          FROM zmt_restaurants zr, zmt_restaurants_ext zre, zmt_parameters zp  "
+                           "         WHERE zr.restaurant_id = zre.restaurant_id "
+                           "           AND zr.loc_locality = zp.locality "
+                           "           AND zp.active_flag = 'Y' "
+                           "      GROUP BY zr.loc_locality, zre.period ) "
+                           "ORDER BY locality, period")
+
+        for row in db_cur_one:
+            loc_analytics.append(row)
+
+        log.debug("select_locality_stats() | <END>")
+        return loc_analytics
