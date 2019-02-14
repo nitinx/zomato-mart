@@ -52,6 +52,36 @@ class ZomatoAlerts:
                     res_cuisines = values[4]
                     res_url = values[5]
                     alert_body += '<tr>' \
+                                  + '<td> NEW </td>' \
+                                  + '<td>' + res_locality + '</td>' \
+                                  + '<td>' + '<a href=' + res_url + '>' + res_name + '</a>' + '</td>' \
+                                  + '<td>' + str(res_user_rating) + '</td>' \
+                                  + '<td>' + str(res_cost_for_two) + '</td>' \
+                                  + '<td>' + res_cuisines + '</td>' \
+                                  + '</tr>'
+
+                db_cur_two.execute("select ZR.LOC_LOCALITY, ZR.RESTAURANT_NAME, ZR_EXT.USER_RATING_AGGREGATE, "
+                                   "       ZR_EXT.AVERAGE_COST_FOR_TWO, ZR_EXT.CUISINES, ZR.URL"
+                                   "  from ZMT_RESTAURANTS ZR, ZMT_RESTAURANTS_EXT ZR_EXT "
+                                   " where ZR.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID "
+                                   "   and ZR_EXT.PERIOD = (select max(PERIOD) "
+                                   "                          from ZMT_RESTAURANTS_EXT "
+                                   "                         where PERIOD < (select max(PERIOD) "
+                                   "                                           from ZMT_RESTAURANTS_EXT))"
+                                   "   and NOT EXISTS (select 'X' "
+                                   "                     from ZMT_RESTAURANTS_EXT ZR_EXT_IN "
+                                   "                    where ZR_EXT_IN.RESTAURANT_ID = ZR_EXT.RESTAURANT_ID "
+                                   "                      and PERIOD = (select max(PERIOD) from ZMT_RESTAURANTS_EXT))"
+                                   "   and ZR.LOC_LOCALITY like :locality", locality=locality)
+                for values in db_cur_two:
+                    res_locality = values[0]
+                    res_name = values[1]
+                    res_user_rating = values[2]
+                    res_cost_for_two = values[3]
+                    res_cuisines = values[4]
+                    res_url = values[5]
+                    alert_body += '<tr>' \
+                                  + '<td> CLOSED </td>' \
                                   + '<td>' + res_locality + '</td>' \
                                   + '<td>' + '<a href=' + res_url + '>' + res_name + '</a>' + '</td>' \
                                   + '<td>' + str(res_user_rating) + '</td>' \
@@ -77,6 +107,7 @@ class ZomatoAlerts:
                        "<body>" \
                        "  <table style='width:100%'>" \
                        "    <tr>" \
+                       "      <th>Status</th>" \
                        "      <th>Locality</th>" \
                        "      <th>Restaurant Name</th>" \
                        "      <th>Rating</th>" \

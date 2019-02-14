@@ -176,18 +176,21 @@ class ZomatoDBInsertOracle:
         """Insert into ZMT_RESTAURANTS_EXT"""
         log.debug("insert_restaurants_ext() | <START>")
 
-        db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :restaurant_id, "
-                           ":cuisines, :average_cost_for_two, :user_rating_aggregate, :user_rating_text, "
-                           ":user_rating_votes, :has_online_delivery, :has_table_booking, SYSDATE)",
-                           restaurant_id=restaurant_id,
-                           cuisines=cuisines,
-                           average_cost_for_two=average_cost_for_two,
-                           user_rating_aggregate=user_rating_aggregate,
-                           user_rating_text=user_rating_text,
-                           user_rating_votes=user_rating_votes,
-                           has_online_delivery=has_online_delivery,
-                           has_table_booking=has_table_booking)
-        db_conn.commit()
+        try:
+            db_cur_two.execute("insert into ZMT_RESTAURANTS_EXT values (TO_CHAR(SYSDATE, 'YYYYMM'), :restaurant_id, "
+                               ":cuisines, :average_cost_for_two, :user_rating_aggregate, :user_rating_text, "
+                               ":user_rating_votes, :has_online_delivery, :has_table_booking, SYSDATE)",
+                               restaurant_id=restaurant_id,
+                               cuisines=cuisines,
+                               average_cost_for_two=average_cost_for_two,
+                               user_rating_aggregate=user_rating_aggregate,
+                               user_rating_text=user_rating_text,
+                               user_rating_votes=user_rating_votes,
+                               has_online_delivery=has_online_delivery,
+                               has_table_booking=has_table_booking)
+            db_conn.commit()
+        except:
+            pass
 
         log.debug("insert_restaurants_ext() | <END>")
 

@@ -38,7 +38,7 @@ if __name__ == '__main__':
     my_lib_logger.addHandler(sh)
 
     # Logger | Set Level
-    my_lib_logger.setLevel("INFO")
+    my_lib_logger.setLevel("DEBUG")
 
     # Initialize Zomato API Key Objects
     ZomatoAPIKey = APIKey()
